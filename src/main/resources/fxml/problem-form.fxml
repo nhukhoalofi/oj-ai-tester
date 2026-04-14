@@ -29,16 +29,26 @@
             <ComboBox fx:id="sourceTypeComboBox" prefWidth="250" />
         </VBox>
 
+        <HBox spacing="10">
+            <children>
+                <Button text="Choose File"
+                        onAction="#handleChooseFile" />
+                <Label fx:id="selectedFileLabel" text="No file selected" />
+            </children>
+        </HBox>
+
         <VBox spacing="6">
             <Label text="Problem Statement" />
             <TextArea fx:id="rawTextArea"
-                      promptText="Enter problem statement here..."
+                      promptText="Enter problem statement here or load from file..."
                       wrapText="true"
-                      prefRowCount="14" />
+                      prefRowCount="16" />
         </VBox>
 
         <HBox spacing="10">
             <children>
+                <Button text="Load Text From File"
+                        onAction="#handleLoadFromFile" />
                 <Button text="Save Problem"
                         onAction="#handleSaveProblem"
                         style="-fx-background-color: #2563eb; -fx-text-fill: white; -fx-font-weight: bold;" />

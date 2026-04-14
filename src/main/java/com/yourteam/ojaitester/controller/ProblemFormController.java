@@ -1,14 +1,23 @@
 package com.yourteam.ojaitester.controller;
-
+import com.yourteam.ojaitester.service.ProblemExtractionService;
+import com.yourteam.ojaitester.service.impl.ProblemExtractionServiceImpl;
+import com.yourteam.ojaitester.service.impl.GeminiService;
 import com.yourteam.ojaitester.model.Problem;
 import com.yourteam.ojaitester.service.ProblemService;
 import com.yourteam.ojaitester.service.impl.ProblemServiceImpl;
+import com.yourteam.ojaitester.util.FileUtils;
+import com.yourteam.ojaitester.util.PdfUtils;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.stage.FileChooser;
+import javafx.stage.Stage;
+
+import java.io.File;
 
 public class ProblemFormController {
 
@@ -21,16 +30,77 @@ public class ProblemFormController {
     @FXML
     private TextArea rawTextArea;
 
+    @FXML
+    private Label selectedFileLabel;
+
     private final ProblemService problemService = new ProblemServiceImpl();
+    private final ProblemExtractionService extractionService = new ProblemExtractionServiceImpl();
+    private File selectedFile;
 
     @FXML
     public void initialize() {
         sourceTypeComboBox.setItems(FXCollections.observableArrayList(
                 "TEXT",
                 "IMAGE",
-                "FILE"
+                "PDF"
         ));
         sourceTypeComboBox.setValue("TEXT");
+    }
+
+    @FXML
+    private void handleChooseFile() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Choose Problem File");
+        fileChooser.getExtensionFilters().addAll(
+                new FileChooser.ExtensionFilter("Supported Files", "*.pdf", "*.png", "*.jpg", "*.jpeg", "*.bmp", "*.webp"),
+                new FileChooser.ExtensionFilter("PDF Files", "*.pdf"),
+                new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg", "*.bmp", "*.webp")
+        );
+
+        Stage stage = (Stage) titleField.getScene().getWindow();
+        File file = fileChooser.showOpenDialog(stage);
+
+        if (file != null) {
+            selectedFile = file;
+            selectedFileLabel.setText(file.getName());
+
+            if (FileUtils.isPdf(file)) {
+                sourceTypeComboBox.setValue("PDF");
+            } else if (FileUtils.isImage(file)) {
+                sourceTypeComboBox.setValue("IMAGE");
+            }
+        }
+    }
+
+    @FXML
+    private void handleLoadFromFile() {
+        if (selectedFile == null) {
+            showError("No File", "Please choose a file first.");
+            return;
+        }
+
+        try {
+            GeminiService gemini = new GeminiService();
+            String text;
+
+            if (FileUtils.isImage(selectedFile)) {
+                text = gemini.extractTextFromImage(selectedFile);
+                sourceTypeComboBox.setValue("IMAGE");
+            } else if (FileUtils.isPdf(selectedFile)) {
+                text = gemini.extractTextFromPdf(selectedFile);
+                sourceTypeComboBox.setValue("PDF");
+            } else {
+                showError("Unsupported File", "Only PDF and image files are supported.");
+                return;
+            }
+
+            rawTextArea.setText(text);
+            showInfo("Success", "Text extracted successfully.");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            showError("Extraction Error", "Failed to extract text:\n" + e.getMessage());
+        }
     }
 
     @FXML
@@ -44,17 +114,22 @@ public class ProblemFormController {
             return;
         }
 
-        if (rawText.isEmpty()) {
-            showError("Validation Error", "Problem statement must not be empty.");
+        if (rawText.isEmpty() && selectedFile == null) {
+            showError("Validation Error", "Problem statement or file must not be empty.");
             return;
         }
 
         try {
+            String savedPath = null;
+            if (selectedFile != null) {
+                savedPath = FileUtils.saveUploadedFile(selectedFile, "problems");
+            }
+
             Problem problem = new Problem();
             problem.setTitle(title);
             problem.setRawText(rawText);
             problem.setSourceType(sourceType);
-            problem.setSourcePath(null);
+            problem.setSourcePath(savedPath);
             problem.setStatus("NEW");
 
             Problem savedProblem = problemService.createProblem(problem);
@@ -81,6 +156,8 @@ public class ProblemFormController {
         titleField.clear();
         rawTextArea.clear();
         sourceTypeComboBox.setValue("TEXT");
+        selectedFile = null;
+        selectedFileLabel.setText("No file selected");
     }
 
     private void showInfo(String title, String message) {
@@ -94,6 +171,7 @@ public class ProblemFormController {
     private void showError(String title, String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setTitle(title);
+        alert.setHeaderText(null);
         alert.setHeaderText(null);
         alert.setContentText(message);
         alert.showAndWait();
