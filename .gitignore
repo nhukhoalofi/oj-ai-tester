@@ -1,0 +1,26 @@
+# Maven
+target/
+
+# IntelliJ
+.idea/
+*.iml
+out/
+
+# Build / logs
+*.class
+*.log
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Runtime / temp
+temp/
+native/
+
+# Environment / secrets
+.env
+
+# VS Code
+.vscode/
