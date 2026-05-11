@@ -1,5 +1,6 @@
 package com.yourteam.ojaitester.controller;
 
+import com.yourteam.ojaitester.model.ExecutionResult;
 import com.yourteam.ojaitester.model.Problem;
 import com.yourteam.ojaitester.model.Submission;
 import com.yourteam.ojaitester.model.SubmissionRunReport;
@@ -41,7 +42,17 @@ public class SubmissionController {
 	@FXML private TableColumn<Submission, String> colLanguage;
 	@FXML private TableColumn<Submission, String> colCreatedAt;
 
+	@FXML private TableView<ExecutionResult> resultTable;
+	@FXML private TableColumn<ExecutionResult, Long> colResultTestcaseId;
+	@FXML private TableColumn<ExecutionResult, String> colResultStatus;
+	@FXML private TableColumn<ExecutionResult, String> colResultRuntimeMs;
+	@FXML private TableColumn<ExecutionResult, String> colResultMemoryKb;
+
 	@FXML private TextArea runSummaryArea;
+	@FXML private TextArea resultInputArea;
+	@FXML private TextArea resultExpectedArea;
+	@FXML private TextArea resultActualArea;
+	@FXML private TextArea resultErrorArea;
 	@FXML private Label statusLabel;
 	@FXML private Button btnSave;
 	@FXML private Button btnRun;
@@ -52,6 +63,7 @@ public class SubmissionController {
 	private final SubmissionService submissionService = new SubmissionServiceImpl();
 	private final ObservableList<Problem> problems = FXCollections.observableArrayList();
 	private final ObservableList<Submission> submissions = FXCollections.observableArrayList();
+	private final ObservableList<ExecutionResult> runResults = FXCollections.observableArrayList();
 
 	private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
@@ -64,11 +76,14 @@ public class SubmissionController {
 
 		setupProblemComboBox();
 		setupSubmissionTable();
+		setupResultTable();
 		setupSubmissionSelectionListener();
+		setupResultSelectionListener();
 		setupProblemSelectionListener();
 		setBusy(false);
 		loadProblemsAsync();
 		clearForm();
+		clearResultDetails();
 	}
 
 	private void setupProblemComboBox() {
@@ -90,6 +105,16 @@ public class SubmissionController {
 		submissionTable.setPlaceholder(new Label("Chọn một problem để xem submissions."));
 	}
 
+	private void setupResultTable() {
+		colResultTestcaseId.setCellValueFactory(new javafx.scene.control.cell.PropertyValueFactory<>("testcaseId"));
+		colResultStatus.setCellValueFactory(new javafx.scene.control.cell.PropertyValueFactory<>("status"));
+		colResultRuntimeMs.setCellValueFactory(data -> new SimpleStringProperty(formatInteger(data.getValue().getExecutionTimeMs()) + " ms"));
+		colResultMemoryKb.setCellValueFactory(data -> new SimpleStringProperty(formatInteger(data.getValue().getMemoryKb()) + " KB"));
+
+		resultTable.setItems(runResults);
+		resultTable.setPlaceholder(new Label("Run a submission to see testcase results."));
+	}
+
 	private void setupSubmissionSelectionListener() {
 		submissionTable.getSelectionModel().selectedItemProperty().addListener((obs, oldValue, newValue) -> {
 			if (newValue != null) {
@@ -99,17 +124,38 @@ public class SubmissionController {
 		});
 	}
 
+	private void setupResultSelectionListener() {
+		resultTable.getSelectionModel().selectedItemProperty().addListener((obs, oldValue, newValue) -> {
+			if (newValue != null) {
+				resultInputArea.setText(nullToEmpty(newValue.getInputData()));
+				resultExpectedArea.setText(nullToEmpty(newValue.getExpectedOutput()));
+				resultActualArea.setText(nullToEmpty(newValue.getActualOutput()));
+				resultErrorArea.setText(nullToEmpty(newValue.getErrorMessage()));
+			} else {
+				clearResultDetails();
+			}
+		});
+	}
+
 	private void setupProblemSelectionListener() {
 		problemComboBox.valueProperty().addListener((obs, oldProblem, newProblem) -> {
 			if (newProblem == null) {
 				submissions.clear();
 				submissionTable.getSelectionModel().clearSelection();
+				resultTable.getSelectionModel().clearSelection();
 				clearForm();
+				runResults.clear();
+				clearResultDetails();
+				runSummaryArea.clear();
 				statusLabel.setText("Please select a problem.");
 				return;
 			}
 			submissionTable.getSelectionModel().clearSelection();
+			resultTable.getSelectionModel().clearSelection();
 			clearForm();
+			runResults.clear();
+			clearResultDetails();
+			runSummaryArea.clear();
 			refreshSubmissionTable();
 		});
 	}
@@ -173,9 +219,12 @@ public class SubmissionController {
 		task.setOnSucceeded(e -> {
 			setBusy(false);
 			SubmissionRunReport report = task.getValue();
-			runSummaryArea.setText(report.getSummaryMessage());
+			runResults.setAll(report.getResults());
+			showRunSummary(report);
 			statusLabel.setText("Run completed: " + report.getOverallStatus());
-			showInfo("Run Completed", report.getSummaryMessage());
+			if (report.getSummaryMessage() != null && !report.getSummaryMessage().isBlank()) {
+				showInfo("Run Completed", report.getSummaryMessage());
+			}
 			refreshSubmissionTable();
 		});
 		task.setOnFailed(e -> {
@@ -190,6 +239,9 @@ public class SubmissionController {
 	private void handleClearForm() {
 		clearForm();
 		submissionTable.getSelectionModel().clearSelection();
+		resultTable.getSelectionModel().clearSelection();
+		runResults.clear();
+		clearResultDetails();
 		runSummaryArea.clear();
 		statusLabel.setText("Form cleared.");
 	}
@@ -242,7 +294,6 @@ public class SubmissionController {
 			setBusy(false);
 			submissions.setAll(task.getValue());
 			statusLabel.setText("Loaded " + submissions.size() + " submissions for " + selectedProblem.getTitle());
-			runSummaryArea.clear();
 		});
 		task.setOnFailed(e -> {
 			setBusy(false);
@@ -290,6 +341,32 @@ public class SubmissionController {
 		sourceCodeArea.clear();
 	}
 
+	private void clearResultDetails() {
+		resultInputArea.clear();
+		resultExpectedArea.clear();
+		resultActualArea.clear();
+		resultErrorArea.clear();
+	}
+
+	private void showRunSummary(SubmissionRunReport report) {
+		StringBuilder text = new StringBuilder();
+		text.append("Submission: ")
+				.append(report.getSubmissionName() != null ? report.getSubmissionName() : "-")
+				.append(" (#")
+				.append(report.getSubmissionId() != null ? report.getSubmissionId() : "-")
+				.append(")\n");
+		text.append("Overall Status: ").append(report.getOverallStatus()).append('\n');
+		text.append("Total Testcases: ").append(report.getTotalTestcases()).append('\n');
+		text.append("Passed: ").append(report.getPassedCount()).append(" / ").append(report.getTotalTestcases()).append('\n');
+		text.append("Failed: ").append(report.getFailedCount()).append('\n');
+		text.append("Total Runtime: ").append(report.getTotalRuntimeMs()).append(" ms\n");
+		text.append("\n").append(report.getSummaryMessage() != null ? report.getSummaryMessage() : "");
+		runSummaryArea.setText(text.toString().trim());
+		if (!runResults.isEmpty()) {
+			resultTable.getSelectionModel().selectFirst();
+		}
+	}
+
 	private void setBusy(boolean busy) {
 		btnSave.setDisable(busy);
 		btnRun.setDisable(busy);
@@ -297,6 +374,7 @@ public class SubmissionController {
 		btnRefresh.setDisable(busy);
 		problemComboBox.setDisable(busy);
 		submissionTable.setDisable(busy);
+		resultTable.setDisable(busy);
 	}
 
 	private void runTask(Task<?> task, String threadName) {
@@ -332,6 +410,14 @@ public class SubmissionController {
 			root = root.getCause();
 		}
 		return root.getMessage() != null ? root.getMessage() : root.toString();
+	}
+
+	private String formatInteger(Integer value) {
+		return value != null ? value.toString() : "-";
+	}
+
+	private String nullToEmpty(String value) {
+		return value != null ? value : "";
 	}
 }
 

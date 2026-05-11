@@ -13,6 +13,7 @@ public class SubmissionRunReport {
     private int tleCount;
     private int runtimeErrorCount;
     private int compileErrorCount;
+    private int totalRuntimeMs;
     private String summaryMessage;
     private final List<ExecutionResult> results = new ArrayList<>();
 
@@ -86,6 +87,18 @@ public class SubmissionRunReport {
 
     public void setCompileErrorCount(int compileErrorCount) {
         this.compileErrorCount = compileErrorCount;
+    }
+
+    public int getTotalRuntimeMs() {
+        return totalRuntimeMs;
+    }
+
+    public void setTotalRuntimeMs(int totalRuntimeMs) {
+        this.totalRuntimeMs = totalRuntimeMs;
+    }
+
+    public int getFailedCount() {
+        return wrongAnswerCount + tleCount + runtimeErrorCount + compileErrorCount;
     }
 
     public String getSummaryMessage() {

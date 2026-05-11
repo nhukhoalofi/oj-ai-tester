@@ -4,6 +4,8 @@ public class ExecutionResult {
     private Long id;
     private Long submissionId;
     private Long testcaseId;
+    private String inputData;
+    private String expectedOutput;
     private String status;
     private Integer executionTimeMs;
     private Integer memoryKb;
@@ -35,6 +37,22 @@ public class ExecutionResult {
 
     public void setTestcaseId(Long testcaseId) {
         this.testcaseId = testcaseId;
+    }
+
+    public String getInputData() {
+        return inputData;
+    }
+
+    public void setInputData(String inputData) {
+        this.inputData = inputData;
+    }
+
+    public String getExpectedOutput() {
+        return expectedOutput;
+    }
+
+    public void setExpectedOutput(String expectedOutput) {
+        this.expectedOutput = expectedOutput;
     }
 
     public String getStatus() {

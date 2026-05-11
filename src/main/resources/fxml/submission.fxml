@@ -19,7 +19,7 @@
 <AnchorPane xmlns="http://javafx.com/javafx/21"
 			xmlns:fx="http://javafx.com/fxml/1"
 			fx:controller="com.yourteam.ojaitester.controller.SubmissionController"
-			prefHeight="800.0" prefWidth="1200.0">
+			prefHeight="900.0" prefWidth="1400.0">
 
 	<children>
 		<VBox AnchorPane.topAnchor="12.0"
@@ -89,45 +89,71 @@
 					</children>
 				</HBox>
 
-				<SplitPane dividerPositions="0.55">
+				<SplitPane dividerPositions="0.52">
 					<items>
-						<VBox spacing="8" prefWidth="620">
+						<VBox spacing="8" prefWidth="640">
 							<children>
 								<Label text="C++ Source Code" style="-fx-font-weight: bold;" />
 								<TextArea fx:id="sourceCodeArea"
 										  wrapText="false"
-										  prefRowCount="26"
+										  prefRowCount="28"
 										  promptText="#include &lt;iostream&gt; ..." />
 							</children>
 						</VBox>
 
-						<VBox spacing="8" prefWidth="520">
+						<VBox spacing="10" prefWidth="720">
 							<children>
 								<Label text="Saved Submissions for selected problem" style="-fx-font-weight: bold;" />
-								<TableView fx:id="submissionTable" prefHeight="400">
+								<TableView fx:id="submissionTable" prefHeight="220">
 									<columns>
 										<TableColumn fx:id="colSubmissionId" text="ID" prefWidth="70" />
-										<TableColumn fx:id="colSubmissionName" text="Name" prefWidth="160" />
+										<TableColumn fx:id="colSubmissionName" text="Name" prefWidth="220" />
 										<TableColumn fx:id="colSubmissionType" text="Type" prefWidth="80" />
 										<TableColumn fx:id="colLanguage" text="Lang" prefWidth="90" />
 										<TableColumn fx:id="colCreatedAt" text="Created At" prefWidth="140" />
 									</columns>
 								</TableView>
+
+								<Label text="Run Results by testcase" style="-fx-font-weight: bold;" />
+								<TableView fx:id="resultTable" prefHeight="220">
+									<columns>
+										<TableColumn fx:id="colResultTestcaseId" text="Testcase ID" prefWidth="100" />
+										<TableColumn fx:id="colResultStatus" text="Status" prefWidth="100" />
+										<TableColumn fx:id="colResultRuntimeMs" text="Runtime" prefWidth="100" />
+										<TableColumn fx:id="colResultMemoryKb" text="Memory" prefWidth="100" />
+									</columns>
+								</TableView>
+
+								<GridPane hgap="8" vgap="8">
+									<columnConstraints>
+										<ColumnConstraints prefWidth="110" />
+										<ColumnConstraints hgrow="ALWAYS" />
+									</columnConstraints>
+									<children>
+										<Label text="Input" GridPane.rowIndex="0" GridPane.columnIndex="0" />
+										<TextArea fx:id="resultInputArea" editable="false" wrapText="true" prefRowCount="3" GridPane.rowIndex="0" GridPane.columnIndex="1" />
+
+										<Label text="Expected" GridPane.rowIndex="1" GridPane.columnIndex="0" />
+										<TextArea fx:id="resultExpectedArea" editable="false" wrapText="true" prefRowCount="3" GridPane.rowIndex="1" GridPane.columnIndex="1" />
+
+										<Label text="Actual" GridPane.rowIndex="2" GridPane.columnIndex="0" />
+										<TextArea fx:id="resultActualArea" editable="false" wrapText="true" prefRowCount="3" GridPane.rowIndex="2" GridPane.columnIndex="1" />
+
+										<Label text="Error" GridPane.rowIndex="3" GridPane.columnIndex="0" />
+										<TextArea fx:id="resultErrorArea" editable="false" wrapText="true" prefRowCount="3" GridPane.rowIndex="3" GridPane.columnIndex="1" />
+									</children>
+								</GridPane>
+
+								<Label text="Run Summary" style="-fx-font-weight: bold;" />
+								<TextArea fx:id="runSummaryArea"
+										  editable="false"
+										  wrapText="true"
+										  prefRowCount="6"
+										  promptText="Run results will appear here." />
 							</children>
 						</VBox>
 					</items>
 				</SplitPane>
-
-				<VBox spacing="6">
-					<children>
-						<Label text="Run Summary" style="-fx-font-weight: bold;" />
-						<TextArea fx:id="runSummaryArea"
-								  editable="false"
-								  wrapText="true"
-								  prefRowCount="6"
-								  promptText="Run results will appear here." />
-					</children>
-				</VBox>
 			</children>
 		</VBox>
 	</children>

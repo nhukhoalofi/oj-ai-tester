@@ -12,9 +12,11 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Comparator;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 public class CppJudgeService {
 
@@ -43,11 +45,11 @@ public class CppJudgeService {
                     report.setCompileErrorCount(1);
                 } else {
                     for (TestCase testCase : testCases) {
-                        report.getResults().add(buildResult(submission.getId(), testCase.getId(), "COMPILE_ERROR", null, compileResult.errorMessage, null));
+                        report.getResults().add(buildResult(submission.getId(), testCase, "CE", null, compileResult.errorMessage, null));
                     }
                     report.setCompileErrorCount(testCases.size());
                 }
-                report.setOverallStatus("COMPILE_ERROR");
+                report.setOverallStatus("CE");
                 report.setSummaryMessage(compileResult.errorMessage);
                 return report;
             }
@@ -61,11 +63,12 @@ public class CppJudgeService {
             for (TestCase testCase : testCases) {
                 ExecutionResult result = runSingleTestCase(submission.getId(), executableFile, testCase, timeoutMs);
                 report.getResults().add(result);
+                report.setTotalRuntimeMs(report.getTotalRuntimeMs() + safeInt(result.getExecutionTimeMs()));
                 switch (result.getStatus()) {
-                    case "PASS" -> report.setPassedCount(report.getPassedCount() + 1);
-                    case "WRONG_ANSWER" -> report.setWrongAnswerCount(report.getWrongAnswerCount() + 1);
+                    case "AC" -> report.setPassedCount(report.getPassedCount() + 1);
+                    case "WA" -> report.setWrongAnswerCount(report.getWrongAnswerCount() + 1);
                     case "TLE" -> report.setTleCount(report.getTleCount() + 1);
-                    case "RUNTIME_ERROR" -> report.setRuntimeErrorCount(report.getRuntimeErrorCount() + 1);
+                    case "RE" -> report.setRuntimeErrorCount(report.getRuntimeErrorCount() + 1);
                     default -> {
                     }
                 }
@@ -85,13 +88,15 @@ public class CppJudgeService {
 
     private ExecutionResult runSingleTestCase(Long submissionId, Path executableFile, TestCase testCase, int timeoutMs) {
         long startNanos = System.nanoTime();
-        Process process = null;
+        Process process;
         String output = "";
-        String error = "";
+        String error;
         try {
             ProcessBuilder builder = new ProcessBuilder(executableFile.toAbsolutePath().toString());
             builder.redirectErrorStream(true);
             process = builder.start();
+            OutputCapture outputCapture = new OutputCapture(process.getInputStream());
+            outputCapture.start();
 
             try (OutputStream stdin = process.getOutputStream()) {
                 String inputData = testCase.getInputData() != null ? testCase.getInputData() : "";
@@ -103,27 +108,27 @@ public class CppJudgeService {
             if (!finished) {
                 process.destroyForcibly();
                 process.waitFor();
-                return buildTimedResult(submissionId, testCase.getId(), "TLE", elapsedMs(startNanos), "Time limit exceeded");
+                return buildTimedResult(submissionId, testCase, elapsedMs(startNanos));
             }
 
-            output = readAll(process.getInputStream());
+            output = outputCapture.await();
             int exitCode = process.exitValue();
             if (exitCode != 0) {
                 error = output.trim();
-                return buildResult(submissionId, testCase.getId(), "RUNTIME_ERROR", elapsedMs(startNanos), error, normalizeOutput(output));
+                return buildResult(submissionId, testCase, "RE", elapsedMs(startNanos), error, normalizeOutput(output));
             }
 
             String actual = normalizeOutput(output);
             String expected = normalizeOutput(testCase.getExpectedOutput());
-            String status = actual.equals(expected) ? "PASS" : "WRONG_ANSWER";
-            return buildResult(submissionId, testCase.getId(), status, elapsedMs(startNanos), null, actual);
+            String status = actual.equals(expected) ? "AC" : "WA";
+            return buildResult(submissionId, testCase, status, elapsedMs(startNanos), null, actual);
         } catch (IOException e) {
             error = e.getMessage();
-            return buildResult(submissionId, testCase.getId(), "RUNTIME_ERROR", elapsedMs(startNanos), error, normalizeOutput(output));
+            return buildResult(submissionId, testCase, "RE", elapsedMs(startNanos), error, normalizeOutput(output));
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             error = e.getMessage();
-            return buildResult(submissionId, testCase.getId(), "RUNTIME_ERROR", elapsedMs(startNanos), error, normalizeOutput(output));
+            return buildResult(submissionId, testCase, "RE", elapsedMs(startNanos), error, normalizeOutput(output));
         }
     }
 
@@ -146,8 +151,10 @@ public class CppJudgeService {
         }
 
         try {
+            OutputCapture outputCapture = new OutputCapture(process.getInputStream());
+            outputCapture.start();
             int exitCode = process.waitFor();
-            String output = readAll(process.getInputStream());
+            String output = outputCapture.await();
             if (exitCode != 0) {
                 return new CompileResult(false, output.isBlank() ? "Compilation failed." : output.trim());
             }
@@ -158,16 +165,19 @@ public class CppJudgeService {
         }
     }
 
-    private ExecutionResult buildTimedResult(Long submissionId, Long testcaseId, String status, int executionTimeMs, String errorMessage) {
-        return buildResult(submissionId, testcaseId, status, executionTimeMs, errorMessage, null);
+    private ExecutionResult buildTimedResult(Long submissionId, TestCase testCase, int executionTimeMs) {
+        return buildResult(submissionId, testCase, "TLE", executionTimeMs, "Time limit exceeded", null);
     }
 
-    private ExecutionResult buildResult(Long submissionId, Long testcaseId, String status, Integer executionTimeMs, String errorMessage, String actualOutput) {
+    private ExecutionResult buildResult(Long submissionId, TestCase testCase, String status, Integer executionTimeMs, String errorMessage, String actualOutput) {
         ExecutionResult result = new ExecutionResult();
         result.setSubmissionId(submissionId);
-        result.setTestcaseId(testcaseId);
+        result.setTestcaseId(testCase.getId());
+        result.setInputData(testCase.getInputData());
+        result.setExpectedOutput(testCase.getExpectedOutput());
         result.setStatus(status);
         result.setExecutionTimeMs(executionTimeMs);
+        result.setMemoryKb(null);
         result.setActualOutput(actualOutput);
         result.setErrorMessage(errorMessage);
         return result;
@@ -179,28 +189,32 @@ public class CppJudgeService {
 
     private String buildSummary(SubmissionRunReport report) {
         return "Total: " + report.getTotalTestcases()
-                + ", PASS: " + report.getPassedCount()
+                + ", AC: " + report.getPassedCount()
                 + ", WA: " + report.getWrongAnswerCount()
                 + ", TLE: " + report.getTleCount()
-                + ", RUNTIME_ERROR: " + report.getRuntimeErrorCount()
-                + ", COMPILE_ERROR: " + report.getCompileErrorCount()
+                + ", RE: " + report.getRuntimeErrorCount()
+                + ", CE: " + report.getCompileErrorCount()
                 + " | Overall: " + report.getOverallStatus();
     }
 
     private String determineOverallStatus(SubmissionRunReport report) {
         if (report.getCompileErrorCount() > 0) {
-            return "COMPILE_ERROR";
+            return "CE";
         }
         if (report.getRuntimeErrorCount() > 0) {
-            return "RUNTIME_ERROR";
+            return "RE";
         }
         if (report.getTleCount() > 0) {
             return "TLE";
         }
         if (report.getWrongAnswerCount() > 0) {
-            return "WRONG_ANSWER";
+            return "WA";
         }
-        return "PASS";
+        return "AC";
+    }
+
+    private int safeInt(Integer value) {
+        return value != null ? value : 0;
     }
 
     private String normalizeOutput(String text) {
@@ -210,14 +224,37 @@ public class CppJudgeService {
         return text.replace("\r\n", "\n").replace('\r', '\n').trim();
     }
 
-    private String readAll(InputStream stream) throws IOException {
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        byte[] buffer = new byte[4096];
-        int read;
-        while ((read = stream.read(buffer)) != -1) {
-            outputStream.write(buffer, 0, read);
+    private static final class OutputCapture implements Runnable {
+        private final InputStream inputStream;
+        private final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        private final Thread thread;
+
+        private OutputCapture(InputStream inputStream) {
+            this.inputStream = inputStream;
+            this.thread = new Thread(this, "cpp-output-capture");
+            this.thread.setDaemon(true);
         }
-        return outputStream.toString(StandardCharsets.UTF_8);
+
+        private void start() {
+            thread.start();
+        }
+
+        private String await() throws InterruptedException {
+            thread.join();
+            return buffer.toString(StandardCharsets.UTF_8);
+        }
+
+        @Override
+        public void run() {
+            byte[] bufferArray = new byte[4096];
+            int read;
+            try (InputStream in = inputStream) {
+                while ((read = in.read(bufferArray)) != -1) {
+                    buffer.write(bufferArray, 0, read);
+                }
+            } catch (IOException ignored) {
+            }
+        }
     }
 
     private void deleteRecursively(Path path) {
@@ -225,14 +262,15 @@ public class CppJudgeService {
             if (!Files.exists(path)) {
                 return;
             }
-            Files.walk(path)
-                    .sorted((a, b) -> b.compareTo(a))
-                    .forEach(p -> {
-                        try {
-                            Files.deleteIfExists(p);
-                        } catch (IOException ignored) {
-                        }
-                    });
+            try (Stream<Path> paths = Files.walk(path)) {
+                paths.sorted(Comparator.reverseOrder())
+                        .forEach(p -> {
+                            try {
+                                Files.deleteIfExists(p);
+                            } catch (IOException ignored) {
+                            }
+                        });
+            }
         } catch (IOException ignored) {
         }
     }
