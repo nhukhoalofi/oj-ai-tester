@@ -79,4 +79,9 @@ public class Problem {
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }
+
+    @Override
+    public String toString() {
+        return title != null && !title.isBlank() ? title : "Problem #" + (id != null ? id : "?");
+    }
 }

@@ -36,7 +36,7 @@
                         style="-fx-background-color: transparent; -fx-text-fill: white; -fx-alignment: CENTER_LEFT;" />
                 <Button text="Submissions"
                         maxWidth="1.7976931348623157E308"
-                        onAction="#showProblemList"
+                        onAction="#showSubmissions"
                         style="-fx-background-color: transparent; -fx-text-fill: white; -fx-alignment: CENTER_LEFT;" />
                 <Button text="Evaluation"
                         maxWidth="1.7976931348623157E308"

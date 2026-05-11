@@ -6,7 +6,6 @@ import javafx.scene.Parent;
 import javafx.scene.control.Alert;
 import javafx.scene.layout.StackPane;
 
-import java.io.IOException;
 import java.net.URL;
 
 public class MainLayoutController {
@@ -26,6 +25,11 @@ public class MainLayoutController {
 	@FXML
 	private void showProblemList() {
 		loadView("/fxml/problem-list.fxml");
+	}
+
+	@FXML
+	private void showSubmissions() {
+		loadView("/fxml/submission.fxml");
 	}
 
 	private void loadView(String resourcePath) {
