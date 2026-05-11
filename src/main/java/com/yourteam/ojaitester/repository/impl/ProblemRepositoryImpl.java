@@ -11,6 +11,23 @@ import java.util.Optional;
 
 public class ProblemRepositoryImpl implements ProblemRepository {
 
+    private Problem mapProblem(ResultSet rs) throws SQLException {
+        Problem p = new Problem();
+        p.setId(rs.getLong("problem_id"));
+        p.setTitle(rs.getString("title"));
+        p.setRawText(rs.getString("raw_text"));
+        p.setSourcePath(rs.getString("source_path"));
+        p.setSourceType(rs.getString("source_type"));
+        p.setStatus(rs.getString("status"));
+
+        Timestamp createdAt = rs.getTimestamp("created_at");
+        if (createdAt != null) {
+            p.setCreatedAt(createdAt.toLocalDateTime());
+        }
+
+        return p;
+    }
+
     @Override
     public Problem save(Problem problem) {
         String sql = """
@@ -52,14 +69,7 @@ public class ProblemRepositoryImpl implements ProblemRepository {
              ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
-                Problem p = new Problem();
-                p.setId(rs.getLong("problem_id"));
-                p.setTitle(rs.getString("title"));
-                p.setRawText(rs.getString("raw_text"));
-                p.setSourcePath(rs.getString("source_path"));
-                p.setSourceType(rs.getString("source_type"));
-                p.setStatus(rs.getString("status"));
-                list.add(p);
+                list.add(mapProblem(rs));
             }
 
         } catch (Exception e) {
@@ -80,14 +90,7 @@ public class ProblemRepositoryImpl implements ProblemRepository {
 
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
-                    Problem p = new Problem();
-                    p.setId(rs.getLong("problem_id"));
-                    p.setTitle(rs.getString("title"));
-                    p.setRawText(rs.getString("raw_text"));
-                    p.setSourcePath(rs.getString("source_path"));
-                    p.setSourceType(rs.getString("source_type"));
-                    p.setStatus(rs.getString("status"));
-                    return Optional.of(p);
+                    return Optional.of(mapProblem(rs));
                 }
             }
 
@@ -100,13 +103,46 @@ public class ProblemRepositoryImpl implements ProblemRepository {
 
     @Override
     public void deleteById(Long id) {
-        String sql = "DELETE FROM problems WHERE problem_id = ?";
+        String deleteExecutionResultsBySubmission = "DELETE FROM execution_results WHERE submission_id IN (SELECT submission_id FROM submissions WHERE problem_id = ?)";
+        String deleteExecutionResultsByTestcase = "DELETE FROM execution_results WHERE testcase_id IN (SELECT testcase_id FROM test_cases WHERE problem_id = ?)";
+        String deleteSubmissions = "DELETE FROM submissions WHERE problem_id = ?";
+        String deleteTestCases = "DELETE FROM test_cases WHERE problem_id = ?";
+        String deleteParsedProblems = "DELETE FROM parsed_problems WHERE problem_id = ?";
+        String deleteProblem = "DELETE FROM problems WHERE problem_id = ?";
 
-        try (Connection conn = DatabaseConfig.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+        try (Connection conn = DatabaseConfig.getConnection()) {
+            conn.setAutoCommit(false);
 
-            ps.setLong(1, id);
-            ps.executeUpdate();
+            try (PreparedStatement ps1 = conn.prepareStatement(deleteExecutionResultsBySubmission);
+                 PreparedStatement ps2 = conn.prepareStatement(deleteExecutionResultsByTestcase);
+                 PreparedStatement ps3 = conn.prepareStatement(deleteSubmissions);
+                 PreparedStatement ps4 = conn.prepareStatement(deleteTestCases);
+                 PreparedStatement ps5 = conn.prepareStatement(deleteParsedProblems);
+                 PreparedStatement ps6 = conn.prepareStatement(deleteProblem)) {
+
+                ps1.setLong(1, id);
+                ps1.executeUpdate();
+
+                ps2.setLong(1, id);
+                ps2.executeUpdate();
+
+                ps3.setLong(1, id);
+                ps3.executeUpdate();
+
+                ps4.setLong(1, id);
+                ps4.executeUpdate();
+
+                ps5.setLong(1, id);
+                ps5.executeUpdate();
+
+                ps6.setLong(1, id);
+                ps6.executeUpdate();
+
+                conn.commit();
+            } catch (Exception ex) {
+                conn.rollback();
+                throw ex;
+            }
 
         } catch (Exception e) {
             throw new RuntimeException("Error deleting problem", e);

@@ -1,12 +1,10 @@
 package com.yourteam.ojaitester.controller;
 import com.yourteam.ojaitester.service.ProblemExtractionService;
 import com.yourteam.ojaitester.service.impl.ProblemExtractionServiceImpl;
-import com.yourteam.ojaitester.service.impl.GeminiService;
 import com.yourteam.ojaitester.model.Problem;
 import com.yourteam.ojaitester.service.ProblemService;
 import com.yourteam.ojaitester.service.impl.ProblemServiceImpl;
 import com.yourteam.ojaitester.util.FileUtils;
-import com.yourteam.ojaitester.util.PdfUtils;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
@@ -36,6 +34,7 @@ public class ProblemFormController {
     private final ProblemService problemService = new ProblemServiceImpl();
     private final ProblemExtractionService extractionService = new ProblemExtractionServiceImpl();
     private File selectedFile;
+    private boolean extractionSucceeded;
 
     @FXML
     public void initialize() {
@@ -45,6 +44,11 @@ public class ProblemFormController {
                 "PDF"
         ));
         sourceTypeComboBox.setValue("TEXT");
+        sourceTypeComboBox.valueProperty().addListener((obs, oldValue, newValue) -> {
+            if ("TEXT".equals(newValue)) {
+                clearSelectedFileState();
+            }
+        });
     }
 
     @FXML
@@ -63,6 +67,8 @@ public class ProblemFormController {
         if (file != null) {
             selectedFile = file;
             selectedFileLabel.setText(file.getName());
+            extractionSucceeded = false;
+            rawTextArea.clear();
 
             if (FileUtils.isPdf(file)) {
                 sourceTypeComboBox.setValue("PDF");
@@ -80,14 +86,13 @@ public class ProblemFormController {
         }
 
         try {
-            GeminiService gemini = new GeminiService();
             String text;
 
             if (FileUtils.isImage(selectedFile)) {
-                text = gemini.extractTextFromImage(selectedFile);
+                text = extractionService.extractTextFromImage(selectedFile);
                 sourceTypeComboBox.setValue("IMAGE");
             } else if (FileUtils.isPdf(selectedFile)) {
-                text = gemini.extractTextFromPdf(selectedFile);
+                text = extractionService.extractTextFromPdf(selectedFile);
                 sourceTypeComboBox.setValue("PDF");
             } else {
                 showError("Unsupported File", "Only PDF and image files are supported.");
@@ -95,10 +100,11 @@ public class ProblemFormController {
             }
 
             rawTextArea.setText(text);
+            extractionSucceeded = text != null && !text.isBlank();
             showInfo("Success", "Text extracted successfully.");
 
         } catch (Exception e) {
-            e.printStackTrace();
+            extractionSucceeded = false;
             showError("Extraction Error", "Failed to extract text:\n" + e.getMessage());
         }
     }
@@ -106,7 +112,7 @@ public class ProblemFormController {
     @FXML
     private void handleSaveProblem() {
         String title = titleField.getText() != null ? titleField.getText().trim() : "";
-        String sourceType = sourceTypeComboBox.getValue();
+        String sourceType = sourceTypeComboBox.getValue() != null ? sourceTypeComboBox.getValue() : "TEXT";
         String rawText = rawTextArea.getText() != null ? rawTextArea.getText().trim() : "";
 
         if (title.isEmpty()) {
@@ -114,14 +120,29 @@ public class ProblemFormController {
             return;
         }
 
-        if (rawText.isEmpty() && selectedFile == null) {
-            showError("Validation Error", "Problem statement or file must not be empty.");
-            return;
+        boolean isSourceFileBased = "IMAGE".equals(sourceType) || "PDF".equals(sourceType);
+
+        if ("TEXT".equals(sourceType)) {
+            if (rawText.isEmpty()) {
+                showError("Validation Error", "Problem statement must not be empty.");
+                return;
+            }
+        } else {
+            if (selectedFile == null) {
+                showError("Validation Error", "Please choose an image or PDF file first.");
+                return;
+            }
+
+            if (!extractionSucceeded || rawText.isEmpty()) {
+                showError("Validation Error",
+                        "Please click Load Text From File to extract the problem statement before saving.");
+                return;
+            }
         }
 
         try {
             String savedPath = null;
-            if (selectedFile != null) {
+            if (isSourceFileBased && selectedFile != null) {
                 savedPath = FileUtils.saveUploadedFile(selectedFile, "problems");
             }
 
@@ -134,15 +155,12 @@ public class ProblemFormController {
 
             Problem savedProblem = problemService.createProblem(problem);
 
-            showInfo(
-                    "Success",
-                    "Problem saved successfully.\nGenerated ID: " + savedProblem.getId()
-            );
+            showInfo("Save Successful",
+                    "Problem saved successfully.\nGenerated ID: " + savedProblem.getId());
 
             clearForm();
 
         } catch (Exception e) {
-            e.printStackTrace();
             showError("Save Error", "Failed to save problem:\n" + e.getMessage());
         }
     }
@@ -156,7 +174,12 @@ public class ProblemFormController {
         titleField.clear();
         rawTextArea.clear();
         sourceTypeComboBox.setValue("TEXT");
+        clearSelectedFileState();
+    }
+
+    private void clearSelectedFileState() {
         selectedFile = null;
+        extractionSucceeded = false;
         selectedFileLabel.setText("No file selected");
     }
 
