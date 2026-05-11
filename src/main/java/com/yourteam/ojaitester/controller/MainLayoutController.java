@@ -32,6 +32,21 @@ public class MainLayoutController {
 		loadView("/fxml/submission.fxml");
 	}
 
+	@FXML
+	private void showAIAnalysis() {
+		showComingSoon("AI Analysis");
+	}
+
+	@FXML
+	private void showTestcases() {
+		showComingSoon("Testcases");
+	}
+
+	@FXML
+	private void showEvaluation() {
+		showComingSoon("Evaluation");
+	}
+
 	private void loadView(String resourcePath) {
 		try {
 			URL resource = getClass().getResource(resourcePath);
@@ -48,5 +63,13 @@ public class MainLayoutController {
 			alert.setContentText("Failed to load: " + resourcePath + "\n\n" + e.getMessage());
 			alert.showAndWait();
 		}
+	}
+
+	private void showComingSoon(String featureName) {
+		Alert alert = new Alert(Alert.AlertType.INFORMATION);
+		alert.setTitle(featureName);
+		alert.setHeaderText(null);
+		alert.setContentText(featureName + " is under development.");
+		alert.showAndWait();
 	}
 }

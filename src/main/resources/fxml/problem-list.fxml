@@ -31,12 +31,12 @@
             <children>
                 <HBox spacing="10" alignment="CENTER_LEFT">
                     <children>
-                        <Label text="Problem List"
+                                <Label text="Danh sách đề bài"
                                style="-fx-font-size: 24; -fx-font-weight: bold;" />
                         <TextField fx:id="searchField"
-                                   promptText="Tìm theo title / source type..."
+                                                   promptText="Tìm theo tiêu đề / loại nguồn..."
                                    prefWidth="320" />
-                        <Label fx:id="statusLabel" text="Sẵn sàng" />
+                                        <Label fx:id="statusLabel" text="Sẵn sàng" />
                         <Region HBox.hgrow="ALWAYS" />
                         <Label fx:id="loadingLabel" text="Đang tải dữ liệu..." visible="false" />
                         <Button fx:id="btnRefresh"
@@ -52,11 +52,11 @@
                                 <Label text="Danh sách đề bài" style="-fx-font-weight: bold; -fx-font-size: 15;" />
                                 <TableView fx:id="problemTable" prefHeight="640">
                                     <columns>
-                                        <TableColumn fx:id="colId" text="ID" prefWidth="70" />
-                                        <TableColumn fx:id="colTitle" text="Title" prefWidth="250" />
-                                        <TableColumn fx:id="colSourceType" text="Source" prefWidth="110" />
-                                        <TableColumn fx:id="colStatus" text="Status" prefWidth="110" />
-                                        <TableColumn fx:id="colCreatedAt" text="Created At" prefWidth="150" />
+                                        <TableColumn fx:id="colId" text="Mã đề" prefWidth="70" />
+                                        <TableColumn fx:id="colTitle" text="Tiêu đề" prefWidth="250" />
+                                        <TableColumn fx:id="colSourceType" text="Nguồn" prefWidth="110" />
+                                        <TableColumn fx:id="colStatus" text="Trạng thái" prefWidth="110" />
+                                        <TableColumn fx:id="colCreatedAt" text="Ngày tạo" prefWidth="150" />
                                     </columns>
                                 </TableView>
                             </children>
@@ -77,16 +77,16 @@
                                     </columnConstraints>
 
                                     <children>
-                                        <Label text="Source Type:" GridPane.rowIndex="0" GridPane.columnIndex="0" />
+                                        <Label text="Loại nguồn:" GridPane.rowIndex="0" GridPane.columnIndex="0" />
                                         <Label fx:id="detailSourceType" text="-" GridPane.rowIndex="0" GridPane.columnIndex="1" />
 
-                                        <Label text="Status:" GridPane.rowIndex="1" GridPane.columnIndex="0" />
+                                        <Label text="Trạng thái:" GridPane.rowIndex="1" GridPane.columnIndex="0" />
                                         <Label fx:id="detailStatus" text="-" GridPane.rowIndex="1" GridPane.columnIndex="1" />
 
-                                        <Label text="Created At:" GridPane.rowIndex="2" GridPane.columnIndex="0" />
+                                        <Label text="Ngày tạo:" GridPane.rowIndex="2" GridPane.columnIndex="0" />
                                         <Label fx:id="detailCreatedAt" text="-" GridPane.rowIndex="2" GridPane.columnIndex="1" />
 
-                                        <Label text="Source Path:" GridPane.rowIndex="3" GridPane.columnIndex="0" />
+                                        <Label text="Đường dẫn nguồn:" GridPane.rowIndex="3" GridPane.columnIndex="0" />
                                         <Label fx:id="detailSourcePath"
                                                text="-"
                                                wrapText="true"
@@ -95,7 +95,7 @@
                                     </children>
                                 </GridPane>
 
-                                <Label text="Raw Text" style="-fx-font-weight: bold;" />
+                                <Label text="Nội dung thô" style="-fx-font-weight: bold;" />
                                 <TextArea fx:id="detailRawText"
                                           editable="false"
                                           wrapText="true"
@@ -104,11 +104,8 @@
 
                                 <HBox spacing="8" alignment="CENTER_RIGHT">
                                     <children>
-                                        <Button fx:id="btnViewDetail"
-                                                text="Xem chi tiết đề"
-                                                onAction="#handleViewDetail" />
                                         <Button fx:id="btnOpenSourceFile"
-                                                text="Mở file gốc"
+                                                text="Mở file nguồn"
                                                 onAction="#handleOpenSourceFile" />
                                         <Button fx:id="btnAnalyzeAI"
                                                 text="Phân tích bằng AI"

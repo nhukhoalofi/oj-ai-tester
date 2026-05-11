@@ -18,6 +18,7 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
@@ -107,7 +108,43 @@ public class SubmissionController {
 
 	private void setupResultTable() {
 		colResultTestcaseId.setCellValueFactory(new javafx.scene.control.cell.PropertyValueFactory<>("testcaseId"));
+		colResultTestcaseId.setCellFactory(column -> new TableCell<>() {
+			@Override
+			protected void updateItem(Long item, boolean empty) {
+				super.updateItem(item, empty);
+				if (empty) {
+					setText(null);
+					setStyle(null);
+				} else {
+					setText(String.valueOf(getIndex() + 1));
+					setStyle("-fx-alignment: CENTER; -fx-font-weight: bold;");
+				}
+			}
+		});
 		colResultStatus.setCellValueFactory(new javafx.scene.control.cell.PropertyValueFactory<>("status"));
+		colResultStatus.setCellFactory(column -> new TableCell<>() {
+			@Override
+			protected void updateItem(String item, boolean empty) {
+				super.updateItem(item, empty);
+				if (empty || item == null || item.isBlank()) {
+					setText(null);
+					setStyle(null);
+					return;
+				}
+
+				String status = item.trim().toUpperCase();
+				setText(status);
+				String color = switch (status) {
+					case "AC" -> "#16a34a";
+					case "WA" -> "#dc2626";
+					case "TLE" -> "#d97706";
+					case "CE" -> "#7c3aed";
+					case "RE" -> "#6b7280";
+					default -> "#111827";
+				};
+				setStyle("-fx-alignment: CENTER; -fx-font-weight: bold; -fx-text-fill: " + color + ";");
+			}
+		});
 		colResultRuntimeMs.setCellValueFactory(data -> new SimpleStringProperty(formatInteger(data.getValue().getExecutionTimeMs()) + " ms"));
 		colResultMemoryKb.setCellValueFactory(data -> new SimpleStringProperty(formatInteger(data.getValue().getMemoryKb()) + " KB"));
 
@@ -169,7 +206,7 @@ public class SubmissionController {
 	private void handleSaveSubmission() {
 		Submission draft;
 		try {
-			draft = buildSubmissionFromForm();
+			draft = buildSubmissionFromFormForSave();
 		} catch (IllegalArgumentException ex) {
 			showError("Validation Error", ex.getMessage());
 			return;
@@ -203,7 +240,7 @@ public class SubmissionController {
 	private void handleRunSubmission() {
 		Submission draft;
 		try {
-			draft = buildSubmissionFromForm();
+			draft = buildSubmissionFromFormAsNew();
 		} catch (IllegalArgumentException ex) {
 			showError("Validation Error", ex.getMessage());
 			return;
@@ -303,17 +340,26 @@ public class SubmissionController {
 		runTask(task, "submission-list-load-task");
 	}
 
-	private Submission buildSubmissionFromForm() {
+	private Submission buildSubmissionFromFormForSave() {
+		Submission submission = buildSubmissionBaseFromForm();
+		Submission selectedRow = submissionTable.getSelectionModel().getSelectedItem();
+		if (selectedRow != null) {
+			submission.setId(selectedRow.getId());
+		}
+		return submission;
+	}
+
+	private Submission buildSubmissionFromFormAsNew() {
+		return buildSubmissionBaseFromForm();
+	}
+
+	private Submission buildSubmissionBaseFromForm() {
 		Problem selectedProblem = problemComboBox.getValue();
 		if (selectedProblem == null) {
 			throw new IllegalArgumentException("Please select a problem.");
 		}
 
 		Submission submission = new Submission();
-		Submission selectedRow = submissionTable.getSelectionModel().getSelectedItem();
-		if (selectedRow != null) {
-			submission.setId(selectedRow.getId());
-		}
 		submission.setProblemId(selectedProblem.getId());
 		submission.setName(submissionNameField.getText());
 		submission.setSubmissionType(submissionTypeComboBox.getValue());

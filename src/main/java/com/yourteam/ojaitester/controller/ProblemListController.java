@@ -44,7 +44,6 @@ public class ProblemListController {
     @FXML private TextArea detailRawText;
 
     // ── Action buttons ────────────────────────────────────────────────────────
-    @FXML private Button btnViewDetail;
     @FXML private Button btnOpenSourceFile;
     @FXML private Button btnAnalyzeAI;
     @FXML private Button btnGenerateTestcase;
@@ -214,19 +213,6 @@ public class ProblemListController {
     }
 
     @FXML
-    private void handleViewDetail() {
-        Problem selected = problemTable.getSelectionModel().getSelectedItem();
-        if (selected == null) {
-            showInfo("Chưa chọn đề", "Vui lòng chọn một đề trong danh sách trước.");
-            return;
-        }
-
-        populateDetail(selected);
-        setActionButtonsDisabled(false);
-        statusLabel.setText("Đang xem: " + selected.getTitle());
-    }
-
-    @FXML
     private void handleOpenSourceFile() {
         Problem selected = problemTable.getSelectionModel().getSelectedItem();
         if (selected == null) {
@@ -333,9 +319,15 @@ public class ProblemListController {
         detailCreatedAt.setText(p.getCreatedAt() != null
                 ? p.getCreatedAt().format(FORMATTER) : "-");
 
-        detailSourcePath.setText(p.getSourcePath() != null && !p.getSourcePath().isBlank()
-                ? "Original file: " + p.getSourcePath()
-                : "Original file: (Không có file đính kèm)");
+        if (p.getSourcePath() != null && !p.getSourcePath().isBlank()) {
+            File sourceFile = new File(p.getSourcePath());
+            String fileName = sourceFile.getName();
+            detailSourcePath.setText(!fileName.isBlank() ? fileName : p.getSourcePath());
+            detailSourcePath.setTooltip(new Tooltip(p.getSourcePath()));
+        } else {
+            detailSourcePath.setText("(Không có file đính kèm)");
+            detailSourcePath.setTooltip(null);
+        }
 
         detailRawText.setText(p.getRawText() != null && !p.getRawText().isBlank()
                 ? p.getRawText()
@@ -348,11 +340,11 @@ public class ProblemListController {
         detailStatus.setText("-");
         detailCreatedAt.setText("-");
         detailSourcePath.setText("-");
+        detailSourcePath.setTooltip(null);
         detailRawText.setText("");
     }
 
     private void setActionButtonsDisabled(boolean disabled) {
-        btnViewDetail.setDisable(disabled);
         btnOpenSourceFile.setDisable(disabled);
         btnAnalyzeAI.setDisable(disabled);
         btnGenerateTestcase.setDisable(disabled);

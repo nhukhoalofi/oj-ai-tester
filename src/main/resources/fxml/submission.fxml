@@ -70,6 +70,9 @@
 
 						<Label text="Language" GridPane.rowIndex="1" GridPane.columnIndex="2" />
 						<TextField fx:id="languageField"
+							   editable="false"
+							   focusTraversable="false"
+							   style="-fx-background-color: #f3f4f6; -fx-text-fill: #374151;"
 								   GridPane.rowIndex="1"
 								   GridPane.columnIndex="3" />
 					</children>
@@ -117,7 +120,7 @@
 								<Label text="Run Results by testcase" style="-fx-font-weight: bold;" />
 								<TableView fx:id="resultTable" prefHeight="220">
 									<columns>
-										<TableColumn fx:id="colResultTestcaseId" text="Testcase ID" prefWidth="100" />
+																<TableColumn fx:id="colResultTestcaseId" text="STT" prefWidth="70" />
 										<TableColumn fx:id="colResultStatus" text="Status" prefWidth="100" />
 										<TableColumn fx:id="colResultRuntimeMs" text="Runtime" prefWidth="100" />
 										<TableColumn fx:id="colResultMemoryKb" text="Memory" prefWidth="100" />
