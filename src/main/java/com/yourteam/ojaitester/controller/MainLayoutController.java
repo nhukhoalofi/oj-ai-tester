@@ -2,59 +2,74 @@ package com.yourteam.ojaitester.controller;
 
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.VBox;
-import javafx.scene.control.Label;
+import javafx.scene.Parent;
+import javafx.scene.control.Alert;
+import javafx.scene.layout.StackPane;
 
-import java.io.IOException;
+import java.net.URL;
 
 public class MainLayoutController {
-    @FXML
-    private BorderPane borderPane;
-    @FXML
-    private VBox sidebarVBox;
 
-    @FXML
-    public void initialize() {
-        // Make menu items clickable
-        setupMenuItems();
-    }
+	@FXML private StackPane centerContainer;
 
-    private void setupMenuItems() {
-        if (sidebarVBox == null) return;
+	@FXML
+	public void initialize() {
+		showProblemList();
+	}
 
-        sidebarVBox.getChildren().forEach(node -> {
-            if (node instanceof Label) {
-                Label label = (Label) node;
-                String text = label.getText();
+	@FXML
+	private void showProblemForm() {
+		loadView("/fxml/problem-form.fxml");
+	}
 
-                label.setStyle("-fx-text-fill: white; -fx-cursor: hand;");
-                label.setOnMouseEntered(e -> 
-                    label.setStyle("-fx-text-fill: #3b82f6; -fx-cursor: hand;")
-                );
-                label.setOnMouseExited(e -> 
-                    label.setStyle("-fx-text-fill: white; -fx-cursor: hand;")
-                );
+	@FXML
+	private void showProblemList() {
+		loadView("/fxml/problem-list.fxml");
+	}
 
-                label.setOnMouseClicked(e -> handleMenuClick(text));
-            }
-        });
-    }
+	@FXML
+	private void showSubmissions() {
+		loadView("/fxml/submission.fxml");
+	}
 
-    private void handleMenuClick(String menuName) {
-        try {
-            String fxmlFile = switch (menuName) {
-                case "Add Problem" -> "/fxml/problem-form.fxml";
-                case "Submissions" -> "/fxml/submission.fxml";
-                default -> null;
-            };
+	@FXML
+	private void showAIAnalysis() {
+		showComingSoon("AI Analysis");
+	}
 
-            if (fxmlFile != null) {
-                FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlFile));
-                borderPane.setCenter(loader.load());
-            }
-        } catch (IOException e) {
-            System.err.println("Failed to load FXML: " + e.getMessage());
-        }
-    }
+	@FXML
+	private void showTestcases() {
+		showComingSoon("Testcases");
+	}
+
+	@FXML
+	private void showEvaluation() {
+		showComingSoon("Evaluation");
+	}
+
+	private void loadView(String resourcePath) {
+		try {
+			URL resource = getClass().getResource(resourcePath);
+			if (resource == null) {
+				throw new IllegalStateException("Missing FXML resource: " + resourcePath);
+			}
+
+			Parent view = FXMLLoader.load(resource);
+			centerContainer.getChildren().setAll(view);
+		} catch (Exception e) {
+			Alert alert = new Alert(Alert.AlertType.ERROR);
+			alert.setTitle("Navigation Error");
+			alert.setHeaderText("Không thể tải màn hình");
+			alert.setContentText("Failed to load: " + resourcePath + "\n\n" + e.getMessage());
+			alert.showAndWait();
+		}
+	}
+
+	private void showComingSoon(String featureName) {
+		Alert alert = new Alert(Alert.AlertType.INFORMATION);
+		alert.setTitle(featureName);
+		alert.setHeaderText(null);
+		alert.setContentText(featureName + " is under development.");
+		alert.showAndWait();
+	}
 }

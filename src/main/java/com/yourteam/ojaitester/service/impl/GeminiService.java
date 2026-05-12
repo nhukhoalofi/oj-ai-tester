@@ -11,8 +11,10 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Base64;
+import java.util.concurrent.TimeUnit;
 
 public class GeminiService {
 
@@ -64,7 +66,7 @@ public class GeminiService {
                     }
                     """.formatted(mimeType, base64Data);
 
-            return callGeminiApi(url, payload);
+            return callGeminiApiWithRetry(url, payload);
 
         } catch (Exception e) {
             throw new RuntimeException("Failed to extract text from image", e);
@@ -100,18 +102,36 @@ public class GeminiService {
                     }
                     """.formatted(mimeType, base64Data);
 
-            return callGeminiApi(url, payload);
+            return callGeminiApiWithRetry(url, payload);
 
         } catch (Exception e) {
             throw new RuntimeException("Failed to extract text from PDF", e);
         }
     }
 
+    private String callGeminiApiWithRetry(String url, String payload) throws Exception {
+        int attempts = 3;
+        long delayMs = 800L;
+        Exception lastError = null;
+
+        for (int attempt = 1; attempt <= attempts; attempt++) {
+            try {
+                return callGeminiApi(url, payload);
+            } catch (RuntimeException ex) {
+                lastError = ex;
+                if (!isTransientGeminiError(ex) || attempt == attempts) {
+                    throw ex;
+                }
+                TimeUnit.MILLISECONDS.sleep(delayMs);
+                delayMs *= 2;
+            }
+        }
+
+        throw lastError;
+    }
+
     private String callGeminiApi(String url, String payload) throws Exception {
-        RequestBody body = RequestBody.create(
-                payload,
-                MediaType.parse("application/json")
-        );
+        RequestBody body = RequestBody.create(payload, MediaType.parse("application/json"));
 
         Request request = new Request.Builder()
                 .url(url)
@@ -141,18 +161,23 @@ public class GeminiService {
         }
     }
 
-    private String detectMimeType(File file) throws Exception {
-        String detected = Files.probeContentType(file.toPath());
-        if (detected != null && !detected.isBlank()) {
-            return detected;
-        }
-
+    private String detectMimeType(File file) throws IOException {
         String name = file.getName().toLowerCase();
         if (name.endsWith(".png")) return "image/png";
         if (name.endsWith(".jpg") || name.endsWith(".jpeg")) return "image/jpeg";
         if (name.endsWith(".webp")) return "image/webp";
         if (name.endsWith(".bmp")) return "image/bmp";
+        String detected = Files.probeContentType(file.toPath());
+        if (detected != null && !detected.isBlank()) {
+            return detected;
+        }
 
         return "application/octet-stream";
+    }
+
+    private boolean isTransientGeminiError(RuntimeException ex) {
+        String message = ex.getMessage() != null ? ex.getMessage() : "";
+        return message.contains("503") || message.contains("429") || message.contains("UNAVAILABLE")
+                || message.contains("high demand") || message.contains("temporarily");
     }
 }

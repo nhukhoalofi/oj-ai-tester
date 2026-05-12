@@ -1,31 +1,53 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.fxml.FXMLLoader?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
 <BorderPane xmlns="http://javafx.com/javafx/21"
             xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="com.yourteam.ojaitester.controller.MainLayoutController"
-            fx:id="borderPane">
+            fx:controller="com.yourteam.ojaitester.controller.MainLayoutController">
 
     <left>
-        <VBox spacing="10" prefWidth="220" style="-fx-background-color: #1f2937; -fx-padding: 20;" fx:id="sidebarVBox">
+        <VBox prefWidth="220"
+              spacing="12"
+              style="-fx-background-color: #1f2937; -fx-padding: 20;">
             <children>
-                <Label text="OJ AI Tester" style="-fx-text-fill: white; -fx-font-size: 20; -fx-font-weight: bold;"/>
-                <Label text="Add Problem" style="-fx-text-fill: white;"/>
-                <Label text="Problem List" style="-fx-text-fill: white;"/>
-                <Label text="AI Analysis" style="-fx-text-fill: white;"/>
-                <Label text="Testcases" style="-fx-text-fill: white;"/>
-                <Label text="Submissions" style="-fx-text-fill: white;"/>
-                <Label text="Evaluation" style="-fx-text-fill: white;"/>
+                <Label text="OJ AI Tester"
+                       style="-fx-text-fill: white; -fx-font-size: 20; -fx-font-weight: bold;" />
+                <Button text="Add Problem"
+                        maxWidth="1.7976931348623157E308"
+                        onAction="#showProblemForm"
+                        style="-fx-background-color: transparent; -fx-text-fill: white; -fx-alignment: CENTER_LEFT;" />
+                <Button text="Problem List"
+                        maxWidth="1.7976931348623157E308"
+                        onAction="#showProblemList"
+                        style="-fx-background-color: transparent; -fx-text-fill: white; -fx-alignment: CENTER_LEFT;" />
+                <Button text="AI Analysis"
+                        maxWidth="1.7976931348623157E308"
+                        onAction="#showAIAnalysis"
+                        style="-fx-background-color: transparent; -fx-text-fill: white; -fx-alignment: CENTER_LEFT;" />
+                <Button text="Testcases"
+                        maxWidth="1.7976931348623157E308"
+                        onAction="#showTestcases"
+                        style="-fx-background-color: transparent; -fx-text-fill: white; -fx-alignment: CENTER_LEFT;" />
+                <Button text="Submissions"
+                        maxWidth="1.7976931348623157E308"
+                        onAction="#showSubmissions"
+                        style="-fx-background-color: transparent; -fx-text-fill: white; -fx-alignment: CENTER_LEFT;" />
+                <Button text="Evaluation"
+                        maxWidth="1.7976931348623157E308"
+                        onAction="#showEvaluation"
+                        style="-fx-background-color: transparent; -fx-text-fill: white; -fx-alignment: CENTER_LEFT;" />
             </children>
         </VBox>
     </left>
 
     <center>
-        <fx:include source="problem-form.fxml"/>
+        <StackPane fx:id="centerContainer" />
     </center>
 
 </BorderPane>
