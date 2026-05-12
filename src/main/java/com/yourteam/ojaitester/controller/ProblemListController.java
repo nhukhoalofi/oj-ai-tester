@@ -45,8 +45,6 @@ public class ProblemListController {
 
     // ── Action buttons ────────────────────────────────────────────────────────
     @FXML private Button btnOpenSourceFile;
-    @FXML private Button btnAnalyzeAI;
-    @FXML private Button btnGenerateTestcase;
     @FXML private Button btnDelete;
 
     // ── State ─────────────────────────────────────────────────────────────────
@@ -285,26 +283,6 @@ public class ProblemListController {
         });
     }
 
-    @FXML
-    private void handleAnalyzeAI() {
-        Problem selected = problemTable.getSelectionModel().getSelectedItem();
-        if (selected == null) return;
-        // TODO: Khi implement màn hình AI Analysis, thay bằng điều hướng thực sự
-        showInfo("Phân tích AI",
-                "Tính năng Phân tích AI đang được phát triển.\n\nĐề đã chọn: "
-                        + selected.getTitle());
-    }
-
-    @FXML
-    private void handleGenerateTestcase() {
-        Problem selected = problemTable.getSelectionModel().getSelectedItem();
-        if (selected == null) return;
-        // TODO: Khi implement màn hình Testcase, thay bằng điều hướng thực sự
-        showInfo("Sinh testcase",
-                "Tính năng Sinh Testcase đang được phát triển.\n\nĐề đã chọn: "
-                        + selected.getTitle());
-    }
-
     // ══════════════════════════════════════════════════════════════════════════
     // Helpers — Detail panel
     // ══════════════════════════════════════════════════════════════════════════
@@ -346,8 +324,6 @@ public class ProblemListController {
 
     private void setActionButtonsDisabled(boolean disabled) {
         btnOpenSourceFile.setDisable(disabled);
-        btnAnalyzeAI.setDisable(disabled);
-        btnGenerateTestcase.setDisable(disabled);
         btnDelete.setDisable(disabled);
     }
 

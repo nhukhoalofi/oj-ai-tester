@@ -7,6 +7,7 @@ import com.yourteam.ojaitester.model.SubmissionRunReport;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 public interface SubmissionService {
     void validateSubmissionInput(Submission submission);
@@ -14,6 +15,7 @@ public interface SubmissionService {
     List<Submission> getSubmissionsByProblemId(Long problemId);
     Optional<Submission> getSubmissionById(Long id);
     SubmissionRunReport runSubmissionOnTestCases(Submission submission);
+    SubmissionRunReport runSubmissionOnTestCases(Submission submission, Consumer<String> progressCallback);
     SubmissionResult submitCode(String code, TestCase testCase, String problemName);
 }
 

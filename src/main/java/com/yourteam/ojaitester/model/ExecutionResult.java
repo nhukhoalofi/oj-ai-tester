@@ -3,7 +3,9 @@ package com.yourteam.ojaitester.model;
 public class ExecutionResult {
     private Long id;
     private Long submissionId;
+    private Long problemId;
     private Long testcaseId;
+    private String category;
     private String inputData;
     private String expectedOutput;
     private String status;
@@ -31,12 +33,28 @@ public class ExecutionResult {
         this.submissionId = submissionId;
     }
 
+    public Long getProblemId() {
+        return problemId;
+    }
+
+    public void setProblemId(Long problemId) {
+        this.problemId = problemId;
+    }
+
     public Long getTestcaseId() {
         return testcaseId;
     }
 
     public void setTestcaseId(Long testcaseId) {
         this.testcaseId = testcaseId;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
     }
 
     public String getInputData() {

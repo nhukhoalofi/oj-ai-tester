@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.SplitPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+
+<AnchorPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.yourteam.ojaitester.controller.TestcaseController"
+            prefHeight="800.0" prefWidth="1200.0">
+
+    <children>
+        <VBox AnchorPane.topAnchor="12.0"
+              AnchorPane.leftAnchor="12.0"
+              AnchorPane.rightAnchor="12.0"
+              AnchorPane.bottomAnchor="12.0"
+              spacing="12"
+              style="-fx-background-color: white; -fx-padding: 16; -fx-background-radius: 8;">
+
+            <children>
+                <HBox spacing="10" alignment="CENTER_LEFT">
+                    <children>
+                        <Label text="Testcases" style="-fx-font-size: 24; -fx-font-weight: bold;" />
+                        <ComboBox fx:id="problemComboBox" promptText="Select a problem..." prefWidth="360" />
+                        <Button fx:id="btnRefreshProblems" text="Refresh problems" onAction="#handleRefreshProblems" />
+                        <Region HBox.hgrow="ALWAYS" />
+                        <Label fx:id="statusLabel" text="Ready" />
+                    </children>
+                </HBox>
+
+                <HBox spacing="8" alignment="CENTER_LEFT">
+                    <children>
+                        <Button fx:id="btnGenerateTestcases"
+                                text="Generate Testcases"
+                                onAction="#handleGenerateTestcases" />
+                        <Button fx:id="btnRefreshTestcases"
+                                text="Refresh"
+                                onAction="#handleRefreshTestcases" />
+                        <Button fx:id="btnDeleteTestcase"
+                                text="Delete testcase"
+                                onAction="#handleDeleteTestcase" />
+                        <Button fx:id="btnClearTestcases"
+                                text="Clear all testcases"
+                                onAction="#handleClearTestcases" />
+                    </children>
+                </HBox>
+
+                <SplitPane dividerPositions="0.62" VBox.vgrow="ALWAYS">
+                    <items>
+                        <VBox spacing="8">
+                            <children>
+                                <Label text="Saved testcases" style="-fx-font-weight: bold; -fx-font-size: 15;" />
+                                <TableView fx:id="testcaseTable" VBox.vgrow="ALWAYS">
+                                    <columns>
+                                        <TableColumn fx:id="colTestcaseId" text="ID" prefWidth="70" />
+                                        <TableColumn fx:id="colTestcaseCategory" text="Category" prefWidth="100" />
+                                        <TableColumn fx:id="colTestcaseInput" text="Input" prefWidth="220" />
+                                        <TableColumn fx:id="colTestcaseExpectedOutput" text="Expected output" prefWidth="180" />
+                                        <TableColumn fx:id="colTestcasePurpose" text="Purpose" prefWidth="260" />
+                                    </columns>
+                                </TableView>
+                            </children>
+                        </VBox>
+
+                        <VBox spacing="8" style="-fx-padding: 0 0 0 8;">
+                            <children>
+                                <Label text="Testcase detail" style="-fx-font-weight: bold; -fx-font-size: 15;" />
+                                <GridPane hgap="8" vgap="8" VBox.vgrow="ALWAYS">
+                                    <children>
+                                        <Label text="Input" GridPane.rowIndex="0" GridPane.columnIndex="0" />
+                                        <TextArea fx:id="inputArea"
+                                                  editable="false"
+                                                  wrapText="false"
+                                                  prefRowCount="12"
+                                                  GridPane.rowIndex="1"
+                                                  GridPane.columnIndex="0" />
+
+                                        <Label text="Expected output" GridPane.rowIndex="2" GridPane.columnIndex="0" />
+                                        <TextArea fx:id="expectedOutputArea"
+                                                  editable="false"
+                                                  wrapText="false"
+                                                  prefRowCount="8"
+                                                  GridPane.rowIndex="3"
+                                                  GridPane.columnIndex="0" />
+
+                                        <Label text="Purpose" GridPane.rowIndex="4" GridPane.columnIndex="0" />
+                                        <TextArea fx:id="purposeArea"
+                                                  editable="false"
+                                                  wrapText="true"
+                                                  prefRowCount="5"
+                                                  GridPane.rowIndex="5"
+                                                  GridPane.columnIndex="0" />
+                                    </children>
+                                </GridPane>
+                            </children>
+                        </VBox>
+                    </items>
+                </SplitPane>
+            </children>
+        </VBox>
+    </children>
+
+    <padding>
+        <Insets top="12" right="12" bottom="12" left="12" />
+    </padding>
+</AnchorPane>

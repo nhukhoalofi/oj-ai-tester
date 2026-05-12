@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.SplitPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+
+<AnchorPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.yourteam.ojaitester.controller.EvaluationController"
+            prefHeight="850.0" prefWidth="1300.0">
+
+    <children>
+        <VBox AnchorPane.topAnchor="12.0"
+              AnchorPane.leftAnchor="12.0"
+              AnchorPane.rightAnchor="12.0"
+              AnchorPane.bottomAnchor="12.0"
+              spacing="12"
+              style="-fx-background-color: white; -fx-padding: 16; -fx-background-radius: 8;">
+
+            <children>
+                <HBox spacing="10" alignment="CENTER_LEFT">
+                    <children>
+                        <Label text="Evaluation Report" style="-fx-font-size: 24; -fx-font-weight: bold;" />
+                        <ComboBox fx:id="problemComboBox" promptText="Select a problem..." prefWidth="360" />
+                        <Button fx:id="btnRefresh" text="Refresh" onAction="#handleRefresh" />
+                        <Button fx:id="btnRunEvaluation" text="Run Evaluation" onAction="#handleRunEvaluation" />
+                        <Region HBox.hgrow="ALWAYS" />
+                        <Label fx:id="statusLabel" text="Ready" />
+                    </children>
+                </HBox>
+
+                <GridPane hgap="12" vgap="8">
+                    <columnConstraints>
+                        <ColumnConstraints prefWidth="160" />
+                        <ColumnConstraints prefWidth="120" />
+                        <ColumnConstraints prefWidth="180" />
+                        <ColumnConstraints prefWidth="120" />
+                        <ColumnConstraints prefWidth="180" />
+                        <ColumnConstraints prefWidth="120" />
+                    </columnConstraints>
+                    <children>
+                        <Label text="Total testcases" GridPane.rowIndex="0" GridPane.columnIndex="0" />
+                        <Label fx:id="totalTestcasesLabel" text="-" GridPane.rowIndex="0" GridPane.columnIndex="1" />
+                        <Label text="AC passed" GridPane.rowIndex="0" GridPane.columnIndex="2" />
+                        <Label fx:id="acPassedLabel" text="-" GridPane.rowIndex="0" GridPane.columnIndex="3" />
+                        <Label text="Strength score" GridPane.rowIndex="0" GridPane.columnIndex="4" />
+                        <Label fx:id="strengthScoreLabel" text="-" GridPane.rowIndex="0" GridPane.columnIndex="5" />
+
+                        <Label text="Wrong detected" GridPane.rowIndex="1" GridPane.columnIndex="0" />
+                        <Label fx:id="wrongDetectedLabel" text="-" GridPane.rowIndex="1" GridPane.columnIndex="1" />
+                        <Label text="TLE detected" GridPane.rowIndex="1" GridPane.columnIndex="2" />
+                        <Label fx:id="tleDetectedLabel" text="-" GridPane.rowIndex="1" GridPane.columnIndex="3" />
+                    </children>
+                </GridPane>
+
+                <SplitPane dividerPositions="0.32" VBox.vgrow="ALWAYS">
+                    <items>
+                        <VBox spacing="8">
+                            <children>
+                                <Label text="Submissions for selected problem" style="-fx-font-weight: bold; -fx-font-size: 15;" />
+                                <TableView fx:id="submissionTable" VBox.vgrow="ALWAYS">
+                                    <columns>
+                                        <TableColumn fx:id="colSubmissionName" text="Name" prefWidth="220" />
+                                        <TableColumn fx:id="colSubmissionType" text="Type" prefWidth="80" />
+                                        <TableColumn fx:id="colSubmissionLanguage" text="Language" prefWidth="100" />
+                                    </columns>
+                                </TableView>
+                            </children>
+                        </VBox>
+
+                        <VBox spacing="8" style="-fx-padding: 0 0 0 8;">
+                            <children>
+                                <Label text="Evaluation result by testcase" style="-fx-font-weight: bold; -fx-font-size: 15;" />
+                                <TableView fx:id="resultTable" VBox.vgrow="ALWAYS">
+                                    <columns>
+                                        <TableColumn fx:id="colTestcaseName" text="Testcase" prefWidth="90" />
+                                        <TableColumn fx:id="colCategory" text="Category" prefWidth="100" />
+                                        <TableColumn fx:id="colAcResult" text="AC Result" prefWidth="220" />
+                                        <TableColumn fx:id="colWrongResults" text="Wrong Code Results" prefWidth="360" />
+                                        <TableColumn fx:id="colComment" text="Comment" prefWidth="300" />
+                                    </columns>
+                                </TableView>
+                            </children>
+                        </VBox>
+                    </items>
+                </SplitPane>
+            </children>
+        </VBox>
+    </children>
+
+    <padding>
+        <Insets top="12" right="12" bottom="12" left="12" />
+    </padding>
+</AnchorPane>

@@ -34,17 +34,17 @@ public class MainLayoutController {
 
 	@FXML
 	private void showAIAnalysis() {
-		showComingSoon("AI Analysis");
+		loadView("/fxml/ai-analysis.fxml");
 	}
 
 	@FXML
 	private void showTestcases() {
-		showComingSoon("Testcases");
+		loadView("/fxml/testcases.fxml");
 	}
 
 	@FXML
 	private void showEvaluation() {
-		showComingSoon("Evaluation");
+		loadView("/fxml/evaluation-view.fxml");
 	}
 
 	private void loadView(String resourcePath) {

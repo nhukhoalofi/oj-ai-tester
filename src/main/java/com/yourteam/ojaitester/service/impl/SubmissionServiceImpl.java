@@ -18,6 +18,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 public class SubmissionServiceImpl implements SubmissionService {
 
@@ -34,7 +35,7 @@ public class SubmissionServiceImpl implements SubmissionService {
             throw new IllegalArgumentException("Submission must not be null.");
         }
         if (submission.getProblemId() == null) {
-            throw new IllegalArgumentException("Please select a problem.");
+            throw new IllegalArgumentException("Please select a problem first.");
         }
         if (submission.getName() == null || submission.getName().trim().isEmpty()) {
             throw new IllegalArgumentException("Submission name must not be empty.");
@@ -43,7 +44,7 @@ public class SubmissionServiceImpl implements SubmissionService {
             throw new IllegalArgumentException("Submission type must be AC, WA, or TLE.");
         }
         if (submission.getSourceCode() == null || submission.getSourceCode().trim().isEmpty()) {
-            throw new IllegalArgumentException("Source code must not be empty.");
+            throw new IllegalArgumentException("Source code is empty.");
         }
     }
 
@@ -77,6 +78,11 @@ public class SubmissionServiceImpl implements SubmissionService {
 
     @Override
     public SubmissionRunReport runSubmissionOnTestCases(Submission submission) {
+        return runSubmissionOnTestCases(submission, null);
+    }
+
+    @Override
+    public SubmissionRunReport runSubmissionOnTestCases(Submission submission, Consumer<String> progressCallback) {
         Submission savedSubmission = saveSubmission(submission);
         List<TestCase> testCases = testCaseRepository.findByProblemId(savedSubmission.getProblemId());
         if (testCases.isEmpty()) {
@@ -90,10 +96,8 @@ public class SubmissionServiceImpl implements SubmissionService {
         }
 
         executionResultRepository.deleteBySubmissionId(savedSubmission.getId());
-        SubmissionRunReport report = judgeService.run(savedSubmission, testCases);
-        for (ExecutionResult result : report.getResults()) {
-            executionResultRepository.saveExecutionResult(result);
-        }
+        SubmissionRunReport report = judgeService.run(savedSubmission, testCases, 2000, progressCallback);
+        executionResultRepository.saveAll(report.getResults());
         return report;
     }
 

@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.SplitPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+
+<AnchorPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.yourteam.ojaitester.controller.AIAnalysisController"
+            prefHeight="820.0"
+            prefWidth="1300.0">
+    <children>
+        <VBox AnchorPane.topAnchor="12.0"
+              AnchorPane.leftAnchor="12.0"
+              AnchorPane.rightAnchor="12.0"
+              AnchorPane.bottomAnchor="12.0"
+              spacing="12"
+              style="-fx-background-color: white; -fx-padding: 16; -fx-background-radius: 8;">
+            <children>
+                <HBox spacing="10" alignment="CENTER_LEFT">
+                    <children>
+                        <Label text="AI Analysis"
+                               style="-fx-font-size: 24; -fx-font-weight: bold;" />
+                        <TextField fx:id="searchField"
+                                   promptText="Search problem..."
+                                   prefWidth="320" />
+                        <Label fx:id="statusLabel" text="Ready" />
+                        <Region HBox.hgrow="ALWAYS" />
+                        <Button fx:id="btnRefresh"
+                                text="Refresh"
+                                onAction="#handleRefresh" />
+                        <Button fx:id="btnAnalyze"
+                                text="Analyze by AI"
+                                onAction="#handleAnalyze" />
+                    </children>
+                </HBox>
+
+                <SplitPane dividerPositions="0.42">
+                    <items>
+                        <VBox spacing="8" prefWidth="520">
+                            <children>
+                                <Label text="Problems" style="-fx-font-weight: bold; -fx-font-size: 15;" />
+                                <TableView fx:id="problemTable" prefHeight="690">
+                                    <columns>
+                                        <TableColumn fx:id="colId" text="ID" prefWidth="70" />
+                                        <TableColumn fx:id="colTitle" text="Title" prefWidth="210" />
+                                        <TableColumn fx:id="colSourceType" text="Source" prefWidth="90" />
+                                        <TableColumn fx:id="colStatus" text="Status" prefWidth="110" />
+                                        <TableColumn fx:id="colCreatedAt" text="Created At" prefWidth="140" />
+                                    </columns>
+                                </TableView>
+                            </children>
+                        </VBox>
+
+                        <SplitPane dividerPositions="0.43" orientation="VERTICAL">
+                            <items>
+                                <VBox spacing="8">
+                                    <children>
+                                        <Label text="Raw Problem Text" style="-fx-font-weight: bold; -fx-font-size: 15;" />
+                                        <TextArea fx:id="rawTextArea"
+                                                  editable="false"
+                                                  wrapText="true"
+                                                  prefRowCount="13"
+                                                  promptText="Select a problem to view raw_text." />
+                                    </children>
+                                </VBox>
+
+                                <VBox spacing="8">
+                                    <children>
+                                        <Label text="Parsed Result" style="-fx-font-weight: bold; -fx-font-size: 15;" />
+                                        <TextField fx:id="parsedTitleField"
+                                                   editable="false"
+                                                   promptText="Title" />
+                                        <TextArea fx:id="parsedStatementArea"
+                                                  editable="false"
+                                                  wrapText="true"
+                                                  prefRowCount="5"
+                                                  promptText="Statement" />
+                                        <TextArea fx:id="parsedInputFormatArea"
+                                                  editable="false"
+                                                  wrapText="true"
+                                                  prefRowCount="3"
+                                                  promptText="Input format" />
+                                        <TextArea fx:id="parsedOutputFormatArea"
+                                                  editable="false"
+                                                  wrapText="true"
+                                                  prefRowCount="3"
+                                                  promptText="Output format" />
+                                        <TextArea fx:id="parsedConstraintsArea"
+                                                  editable="false"
+                                                  wrapText="true"
+                                                  prefRowCount="3"
+                                                  promptText="Constraints" />
+                                        <TextField fx:id="parsedTagsField"
+                                                   editable="false"
+                                                   promptText="Tags" />
+                                        <TextArea fx:id="parsedSummaryArea"
+                                                  editable="false"
+                                                  wrapText="true"
+                                                  prefRowCount="3"
+                                                  promptText="Summary" />
+                                    </children>
+                                </VBox>
+                            </items>
+                        </SplitPane>
+                    </items>
+                </SplitPane>
+            </children>
+        </VBox>
+    </children>
+
+    <padding>
+        <Insets top="12" right="12" bottom="12" left="12" />
+    </padding>
+</AnchorPane>

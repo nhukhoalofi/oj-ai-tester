@@ -84,7 +84,7 @@
 								text="Save"
 								onAction="#handleSaveSubmission" />
 						<Button fx:id="btnRun"
-								text="Run"
+								text="Run All Testcases"
 								onAction="#handleRunSubmission" />
 						<Button fx:id="btnClear"
 								text="Clear"
@@ -120,10 +120,14 @@
 								<Label text="Run Results by testcase" style="-fx-font-weight: bold;" />
 								<TableView fx:id="resultTable" prefHeight="220">
 									<columns>
-																<TableColumn fx:id="colResultTestcaseId" text="STT" prefWidth="70" />
+										<TableColumn fx:id="colResultTestcaseId" text="Testcase ID" prefWidth="90" />
+										<TableColumn fx:id="colResultCategory" text="Category" prefWidth="90" />
 										<TableColumn fx:id="colResultStatus" text="Status" prefWidth="100" />
 										<TableColumn fx:id="colResultRuntimeMs" text="Runtime" prefWidth="100" />
 										<TableColumn fx:id="colResultMemoryKb" text="Memory" prefWidth="100" />
+										<TableColumn fx:id="colResultExpectedOutput" text="Expected output" prefWidth="160" />
+										<TableColumn fx:id="colResultActualOutput" text="Actual output" prefWidth="160" />
+										<TableColumn fx:id="colResultErrorMessage" text="Error message" prefWidth="200" />
 									</columns>
 								</TableView>
 

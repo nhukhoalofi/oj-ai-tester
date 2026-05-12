@@ -45,9 +45,13 @@ public class SubmissionController {
 
 	@FXML private TableView<ExecutionResult> resultTable;
 	@FXML private TableColumn<ExecutionResult, Long> colResultTestcaseId;
+	@FXML private TableColumn<ExecutionResult, String> colResultCategory;
 	@FXML private TableColumn<ExecutionResult, String> colResultStatus;
 	@FXML private TableColumn<ExecutionResult, String> colResultRuntimeMs;
 	@FXML private TableColumn<ExecutionResult, String> colResultMemoryKb;
+	@FXML private TableColumn<ExecutionResult, String> colResultExpectedOutput;
+	@FXML private TableColumn<ExecutionResult, String> colResultActualOutput;
+	@FXML private TableColumn<ExecutionResult, String> colResultErrorMessage;
 
 	@FXML private TextArea runSummaryArea;
 	@FXML private TextArea resultInputArea;
@@ -108,19 +112,7 @@ public class SubmissionController {
 
 	private void setupResultTable() {
 		colResultTestcaseId.setCellValueFactory(new javafx.scene.control.cell.PropertyValueFactory<>("testcaseId"));
-		colResultTestcaseId.setCellFactory(column -> new TableCell<>() {
-			@Override
-			protected void updateItem(Long item, boolean empty) {
-				super.updateItem(item, empty);
-				if (empty) {
-					setText(null);
-					setStyle(null);
-				} else {
-					setText(String.valueOf(getIndex() + 1));
-					setStyle("-fx-alignment: CENTER; -fx-font-weight: bold;");
-				}
-			}
-		});
+		colResultCategory.setCellValueFactory(new javafx.scene.control.cell.PropertyValueFactory<>("category"));
 		colResultStatus.setCellValueFactory(new javafx.scene.control.cell.PropertyValueFactory<>("status"));
 		colResultStatus.setCellFactory(column -> new TableCell<>() {
 			@Override
@@ -147,6 +139,9 @@ public class SubmissionController {
 		});
 		colResultRuntimeMs.setCellValueFactory(data -> new SimpleStringProperty(formatInteger(data.getValue().getExecutionTimeMs()) + " ms"));
 		colResultMemoryKb.setCellValueFactory(data -> new SimpleStringProperty(formatInteger(data.getValue().getMemoryKb()) + " KB"));
+		colResultExpectedOutput.setCellValueFactory(new javafx.scene.control.cell.PropertyValueFactory<>("expectedOutput"));
+		colResultActualOutput.setCellValueFactory(new javafx.scene.control.cell.PropertyValueFactory<>("actualOutput"));
+		colResultErrorMessage.setCellValueFactory(new javafx.scene.control.cell.PropertyValueFactory<>("errorMessage"));
 
 		resultTable.setItems(runResults);
 		resultTable.setPlaceholder(new Label("Run a submission to see testcase results."));
@@ -248,18 +243,27 @@ public class SubmissionController {
 		Task<SubmissionRunReport> task = new Task<>() {
 			@Override
 			protected SubmissionRunReport call() {
-				return submissionService.runSubmissionOnTestCases(draft);
+				return submissionService.runSubmissionOnTestCases(draft, this::updateMessage);
 			}
 		};
 
 		task.setOnRunning(e -> setBusy(true));
+		task.messageProperty().addListener((obs, oldMessage, newMessage) -> {
+			if (newMessage != null && !newMessage.isBlank()) {
+				statusLabel.setText(newMessage);
+			}
+		});
 		task.setOnSucceeded(e -> {
 			setBusy(false);
 			SubmissionRunReport report = task.getValue();
 			runResults.setAll(report.getResults());
 			showRunSummary(report);
 			statusLabel.setText("Run completed: " + report.getOverallStatus());
-			if (report.getSummaryMessage() != null && !report.getSummaryMessage().isBlank()) {
+			if ("NO_TESTCASE".equals(report.getOverallStatus())) {
+				showError("Run Failed", "No testcases found for this problem.");
+			} else if ("CE".equals(report.getOverallStatus())) {
+				showError("Compilation Error", report.getSummaryMessage());
+			} else if (report.getSummaryMessage() != null && !report.getSummaryMessage().isBlank()) {
 				showInfo("Run Completed", report.getSummaryMessage());
 			}
 			refreshSubmissionTable();
@@ -403,8 +407,11 @@ public class SubmissionController {
 				.append(")\n");
 		text.append("Overall Status: ").append(report.getOverallStatus()).append('\n');
 		text.append("Total Testcases: ").append(report.getTotalTestcases()).append('\n');
-		text.append("Passed: ").append(report.getPassedCount()).append(" / ").append(report.getTotalTestcases()).append('\n');
-		text.append("Failed: ").append(report.getFailedCount()).append('\n');
+		text.append("AC: ").append(report.getPassedCount()).append('\n');
+		text.append("WA: ").append(report.getWrongAnswerCount()).append('\n');
+		text.append("TLE: ").append(report.getTleCount()).append('\n');
+		text.append("RE: ").append(report.getRuntimeErrorCount()).append('\n');
+		text.append("CE: ").append(report.getCompileErrorCount()).append('\n');
 		text.append("Total Runtime: ").append(report.getTotalRuntimeMs()).append(" ms\n");
 		text.append("\n").append(report.getSummaryMessage() != null ? report.getSummaryMessage() : "");
 		runSummaryArea.setText(text.toString().trim());
@@ -450,6 +457,25 @@ public class SubmissionController {
 	private String getRootMessage(Throwable throwable) {
 		if (throwable == null) {
 			return "Unknown error";
+		}
+		Throwable current = throwable;
+		while (current != null) {
+			String message = current.getMessage();
+			if (message != null) {
+				if (message.contains("Cannot save execution results to database")) {
+					return "Cannot save execution results to database.";
+				}
+				if (message.contains("g++ compiler not found")) {
+					return "g++ compiler not found. Please install MinGW or configure PATH.";
+				}
+				if (message.contains("Cannot create temporary source file")) {
+					return "Cannot create temporary source file.";
+				}
+				if (message.contains("Cannot execute compiled program")) {
+					return "Cannot execute compiled program.";
+				}
+			}
+			current = current.getCause();
 		}
 		Throwable root = throwable;
 		while (root.getCause() != null) {

@@ -14,26 +14,48 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Base64;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public class GeminiService {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
-    private static final OkHttpClient CLIENT = new OkHttpClient();
+    private static final OkHttpClient CLIENT = new OkHttpClient.Builder()
+            .connectTimeout(30, TimeUnit.SECONDS)
+            .writeTimeout(60, TimeUnit.SECONDS)
+            .readTimeout(180, TimeUnit.SECONDS)
+            .callTimeout(240, TimeUnit.SECONDS)
+            .build();
 
     private final String apiKey;
     private final String model;
 
     public GeminiService() {
-        this.apiKey = AppConfig.getProperty("ai.apiKey");
+        String envApiKey = System.getenv("GEMINI_API_KEY");
+        this.apiKey = envApiKey != null && !envApiKey.isBlank()
+                ? envApiKey
+                : AppConfig.getProperty("ai.apiKey");
         this.model = AppConfig.getProperty("ai.model");
 
         if (apiKey == null || apiKey.isBlank()) {
-            throw new RuntimeException("Gemini API key is missing. Please check application.properties");
+            throw new RuntimeException("Gemini API key is missing.");
         }
 
         if (model == null || model.isBlank()) {
             throw new RuntimeException("Gemini model is missing. Please check application.properties");
+        }
+    }
+
+    public String generateText(String prompt) {
+        try {
+            String url = "https://generativelanguage.googleapis.com/v1beta/models/"
+                    + model + ":generateContent?key=" + apiKey;
+            String payload = buildTextPayload(prompt);
+            return callGeminiApiWithRetry(url, payload);
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RuntimeException(toGeminiErrorMessage(e), e);
         }
     }
 
@@ -117,6 +139,13 @@ public class GeminiService {
         for (int attempt = 1; attempt <= attempts; attempt++) {
             try {
                 return callGeminiApi(url, payload);
+            } catch (IOException ex) {
+                lastError = ex;
+                if (!isTransientGeminiError(ex) || attempt == attempts) {
+                    throw ex;
+                }
+                TimeUnit.MILLISECONDS.sleep(delayMs);
+                delayMs *= 2;
             } catch (RuntimeException ex) {
                 lastError = ex;
                 if (!isTransientGeminiError(ex) || attempt == attempts) {
@@ -128,6 +157,20 @@ public class GeminiService {
         }
 
         throw lastError;
+    }
+
+    private String buildTextPayload(String prompt) throws Exception {
+        Map<String, Object> payload = Map.of(
+                "contents", new Object[]{
+                        Map.of("parts", new Object[]{
+                                Map.of("text", prompt)
+                        })
+                },
+                "generationConfig", Map.of(
+                        "response_mime_type", "application/json"
+                )
+        );
+        return MAPPER.writeValueAsString(payload);
     }
 
     private String callGeminiApi(String url, String payload) throws Exception {
@@ -175,9 +218,20 @@ public class GeminiService {
         return "application/octet-stream";
     }
 
-    private boolean isTransientGeminiError(RuntimeException ex) {
+    private boolean isTransientGeminiError(Exception ex) {
         String message = ex.getMessage() != null ? ex.getMessage() : "";
+        String lower = message.toLowerCase();
         return message.contains("503") || message.contains("429") || message.contains("UNAVAILABLE")
-                || message.contains("high demand") || message.contains("temporarily");
+                || lower.contains("timeout") || lower.contains("timed out")
+                || lower.contains("high demand") || lower.contains("temporarily");
+    }
+
+    private String toGeminiErrorMessage(Exception e) {
+        String message = e.getMessage() != null ? e.getMessage() : "";
+        String lower = message.toLowerCase();
+        if (lower.contains("timeout") || lower.contains("timed out")) {
+            return "Gemini API timed out. Please try again, or shorten the problem statement.";
+        }
+        return "Gemini API failed: " + message;
     }
 }

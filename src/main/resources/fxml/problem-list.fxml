@@ -107,18 +107,13 @@
                                         <Button fx:id="btnOpenSourceFile"
                                                 text="Mở file nguồn"
                                                 onAction="#handleOpenSourceFile" />
-                                        <Button fx:id="btnAnalyzeAI"
-                                                text="Phân tích bằng AI"
-                                                onAction="#handleAnalyzeAI" />
-                                        <Button fx:id="btnGenerateTestcase"
-                                                text="Sinh testcase"
-                                                onAction="#handleGenerateTestcase" />
                                         <Button fx:id="btnDelete"
                                                 text="Xóa đề"
                                                 onAction="#handleDelete"
                                                 style="-fx-background-color: #ef4444; -fx-text-fill: white;" />
                                     </children>
                                 </HBox>
+
                             </children>
                         </VBox>
                     </items>

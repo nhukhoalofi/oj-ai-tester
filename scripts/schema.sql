@@ -15,15 +15,20 @@ CREATE TABLE problems (
 );
 
 CREATE TABLE parsed_problems (
-    parsed_id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    id BIGINT IDENTITY(1,1) PRIMARY KEY,
     problem_id BIGINT NOT NULL,
+    title NVARCHAR(500),
     statement NVARCHAR(MAX),
     input_format NVARCHAR(MAX),
     output_format NVARCHAR(MAX),
     constraints_text NVARCHAR(MAX),
-    tags NVARCHAR(500),
-    ai_summary NVARCHAR(MAX),
-    FOREIGN KEY (problem_id) REFERENCES problems(problem_id)
+    tags NVARCHAR(MAX),
+    summary NVARCHAR(MAX),
+    created_at DATETIME DEFAULT GETDATE(),
+    updated_at DATETIME DEFAULT GETDATE(),
+    CONSTRAINT uq_parsed_problems_problem_id UNIQUE (problem_id),
+    CONSTRAINT fk_parsed_problem_problem
+        FOREIGN KEY (problem_id) REFERENCES problems(problem_id)
 );
 
 CREATE TABLE test_cases (
@@ -32,9 +37,11 @@ CREATE TABLE test_cases (
     category NVARCHAR(50),
     input_data NVARCHAR(MAX),
     expected_output NVARCHAR(MAX),
-    purpose NVARCHAR(500),
+    purpose NVARCHAR(MAX),
     strength_score INT,
     generated_by NVARCHAR(50),
+    created_at DATETIME DEFAULT GETDATE(),
+    updated_at DATETIME DEFAULT GETDATE(),
     FOREIGN KEY (problem_id) REFERENCES problems(problem_id)
 );
 
@@ -46,18 +53,23 @@ CREATE TABLE submissions (
     language NVARCHAR(50),
     source_code NVARCHAR(MAX),
     created_at DATETIME DEFAULT GETDATE(),
+    updated_at DATETIME DEFAULT GETDATE(),
     FOREIGN KEY (problem_id) REFERENCES problems(problem_id)
 );
 
 CREATE TABLE execution_results (
     result_id BIGINT IDENTITY(1,1) PRIMARY KEY,
-    submission_id BIGINT NOT NULL,
+    submission_id BIGINT NULL,
+    problem_id BIGINT NOT NULL,
     testcase_id BIGINT NOT NULL,
     status NVARCHAR(50),
     execution_time_ms INT,
     memory_kb INT,
     actual_output NVARCHAR(MAX),
+    expected_output NVARCHAR(MAX),
     error_message NVARCHAR(MAX),
+    created_at DATETIME DEFAULT GETDATE(),
+    FOREIGN KEY (problem_id) REFERENCES problems(problem_id),
     FOREIGN KEY (submission_id) REFERENCES submissions(submission_id),
     FOREIGN KEY (testcase_id) REFERENCES test_cases(testcase_id)
 );
