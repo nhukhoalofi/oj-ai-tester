@@ -9,6 +9,7 @@ public class Submission {
     private String submissionType;
     private String language;
     private String sourceCode;
+    private String note;
     private LocalDateTime createdAt;
 
     public Submission() {
@@ -70,6 +71,14 @@ public class Submission {
 
     public void setSourceCode(String sourceCode) {
         this.sourceCode = sourceCode;
+    }
+
+    public String getNote() {
+        return note;
+    }
+
+    public void setNote(String note) {
+        this.note = note;
     }
 
     public LocalDateTime getCreatedAt() {

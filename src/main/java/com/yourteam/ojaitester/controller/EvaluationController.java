@@ -221,7 +221,7 @@ public class EvaluationController {
                 if (message.contains("At least one AC")) return "At least one AC solution is required for evaluation.";
                 if (message.contains("At least one WA or TLE")) return "At least one WA or TLE solution is required to evaluate testcase strength.";
                 if (message.contains("g++ compiler not found")) return "g++ compiler not found. Please install MinGW or configure PATH.";
-                if (message.contains("Cannot save execution results")) return "Cannot save evaluation results to database.";
+                if (message.contains("Cannot save execution results")) return message;
                 return message;
             }
             current = current.getCause();

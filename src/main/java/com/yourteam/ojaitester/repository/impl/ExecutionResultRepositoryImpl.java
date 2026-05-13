@@ -37,7 +37,7 @@ public class ExecutionResultRepositoryImpl implements ExecutionResultRepository 
 
             return result;
         } catch (Exception e) {
-            throw new RuntimeException("Cannot save execution results to database.", e);
+            throw new RuntimeException("Cannot save execution results to database: " + rootMessage(e), e);
         }
     }
 
@@ -61,20 +61,13 @@ public class ExecutionResultRepositoryImpl implements ExecutionResultRepository 
 
         try (Connection conn = DatabaseConfig.getConnection()) {
             conn.setAutoCommit(false);
-            try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 for (ExecutionResult result : results) {
                     bind(ps, result);
                     ps.addBatch();
                 }
                 ps.executeBatch();
 
-                try (ResultSet keys = ps.getGeneratedKeys()) {
-                    int index = 0;
-                    while (keys.next() && index < results.size()) {
-                        results.get(index).setId(keys.getLong(1));
-                        index++;
-                    }
-                }
                 conn.commit();
                 return results;
             } catch (Exception ex) {
@@ -82,7 +75,7 @@ public class ExecutionResultRepositoryImpl implements ExecutionResultRepository 
                 throw ex;
             }
         } catch (Exception e) {
-            throw new RuntimeException("Cannot save execution results to database.", e);
+            throw new RuntimeException("Cannot save execution results to database: " + rootMessage(e), e);
         }
     }
 
@@ -212,5 +205,13 @@ public class ExecutionResultRepositoryImpl implements ExecutionResultRepository 
         result.setActualOutput(rs.getString("actual_output"));
         result.setErrorMessage(rs.getString("error_message"));
         return result;
+    }
+
+    private String rootMessage(Throwable throwable) {
+        Throwable cursor = throwable;
+        while (cursor.getCause() != null) {
+            cursor = cursor.getCause();
+        }
+        return cursor.getMessage() != null ? cursor.getMessage() : cursor.toString();
     }
 }

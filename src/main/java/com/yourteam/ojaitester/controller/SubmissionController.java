@@ -1,11 +1,16 @@
 package com.yourteam.ojaitester.controller;
 
+import com.yourteam.ojaitester.dto.GeneratedCodeDto;
 import com.yourteam.ojaitester.model.ExecutionResult;
 import com.yourteam.ojaitester.model.Problem;
 import com.yourteam.ojaitester.model.Submission;
 import com.yourteam.ojaitester.model.SubmissionRunReport;
+import com.yourteam.ojaitester.repository.SubmissionRepository;
+import com.yourteam.ojaitester.repository.impl.SubmissionRepositoryImpl;
 import com.yourteam.ojaitester.service.ProblemService;
+import com.yourteam.ojaitester.service.SampleCodeGenerationService;
 import com.yourteam.ojaitester.service.SubmissionService;
+import com.yourteam.ojaitester.service.impl.GeminiSampleCodeGenerationService;
 import com.yourteam.ojaitester.service.impl.ProblemServiceImpl;
 import com.yourteam.ojaitester.service.impl.SubmissionServiceImpl;
 import javafx.application.Platform;
@@ -16,6 +21,7 @@ import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableCell;
@@ -35,6 +41,7 @@ public class SubmissionController {
 	@FXML private ComboBox<String> submissionTypeComboBox;
 	@FXML private TextField languageField;
 	@FXML private TextArea sourceCodeArea;
+	@FXML private TextArea generatedExplanationArea;
 
 	@FXML private TableView<Submission> submissionTable;
 	@FXML private TableColumn<Submission, Long> colSubmissionId;
@@ -61,11 +68,15 @@ public class SubmissionController {
 	@FXML private Label statusLabel;
 	@FXML private Button btnSave;
 	@FXML private Button btnRun;
+	@FXML private Button btnGenerateCode;
+	@FXML private Button btnSaveGeneratedCode;
 	@FXML private Button btnClear;
 	@FXML private Button btnRefresh;
 
 	private final ProblemService problemService = new ProblemServiceImpl();
 	private final SubmissionService submissionService = new SubmissionServiceImpl();
+	private final SubmissionRepository submissionRepository = new SubmissionRepositoryImpl();
+	private final SampleCodeGenerationService sampleCodeGenerationService = new GeminiSampleCodeGenerationService();
 	private final ObservableList<Problem> problems = FXCollections.observableArrayList();
 	private final ObservableList<Submission> submissions = FXCollections.observableArrayList();
 	private final ObservableList<ExecutionResult> runResults = FXCollections.observableArrayList();
@@ -277,6 +288,115 @@ public class SubmissionController {
 	}
 
 	@FXML
+	private void handleGenerateCodeByAI() {
+		Problem selectedProblem = problemComboBox.getValue();
+		String selectedType = submissionTypeComboBox.getValue();
+		if (selectedProblem == null) {
+			showError("Generate Code Failed", "Please select a problem first.");
+			return;
+		}
+		if (selectedType == null || selectedType.isBlank()) {
+			showError("Generate Code Failed", "Please select code type.");
+			return;
+		}
+		if (selectedProblem.getRawText() == null || selectedProblem.getRawText().isBlank()) {
+			showError("Generate Code Failed", "Problem statement is empty.");
+			return;
+		}
+
+		Task<GeneratedCodeDto> task = new Task<>() {
+			@Override
+			protected GeneratedCodeDto call() {
+				return sampleCodeGenerationService.generateCode(selectedProblem, selectedType);
+			}
+		};
+
+		task.setOnRunning(e -> {
+			setBusy(true);
+			statusLabel.setText("Generating code...");
+		});
+		task.setOnSucceeded(e -> {
+			setBusy(false);
+			GeneratedCodeDto generatedCode = task.getValue();
+			submissionTypeComboBox.setValue(selectedType);
+			languageField.setText("CPP");
+			submissionNameField.setText("AI Generated " + selectedType);
+			sourceCodeArea.setText(generatedCode.getCode());
+			generatedExplanationArea.setText(nullToEmpty(generatedCode.getExplanation()));
+			statusLabel.setText("Generated " + selectedType + " code.");
+		});
+		task.setOnFailed(e -> {
+			setBusy(false);
+			statusLabel.setText("Code generation failed.");
+			showError("Generate Code Failed", getRootMessage(task.getException()));
+		});
+
+		runTask(task, "sample-code-generation-task");
+	}
+
+	@FXML
+	private void handleSaveGeneratedCode() {
+		Problem selectedProblem = problemComboBox.getValue();
+		String selectedType = submissionTypeComboBox.getValue();
+		if (selectedProblem == null) {
+			showError("Save Code Failed", "Please select a problem first.");
+			return;
+		}
+		if (selectedType == null || selectedType.isBlank()) {
+			showError("Save Code Failed", "Please select code type.");
+			return;
+		}
+		if (!isValidGeneratedCode(sourceCodeArea.getText())) {
+			showError("Save Code Failed", "Generated code is invalid.");
+			return;
+		}
+
+		List<Submission> existing;
+		try {
+			existing = submissionRepository.findByProblemIdAndType(selectedProblem.getId(), selectedType);
+		} catch (Exception ex) {
+			showError("Save Code Failed", "Cannot save generated code.");
+			return;
+		}
+		if (!existing.isEmpty() && !confirmReplaceGeneratedCode()) {
+			statusLabel.setText("Save cancelled.");
+			return;
+		}
+
+		Submission generatedSubmission = new Submission();
+		generatedSubmission.setProblemId(selectedProblem.getId());
+		generatedSubmission.setName("AI Generated " + selectedType);
+		generatedSubmission.setSubmissionType(selectedType);
+		generatedSubmission.setLanguage("CPP");
+		generatedSubmission.setSourceCode(sourceCodeArea.getText());
+		generatedSubmission.setNote(generatedExplanationArea.getText());
+
+		Task<Submission> task = new Task<>() {
+			@Override
+			protected Submission call() {
+				if (!existing.isEmpty()) {
+					submissionRepository.deleteByProblemIdAndType(selectedProblem.getId(), selectedType);
+				}
+				return submissionService.saveSubmission(generatedSubmission);
+			}
+		};
+
+		task.setOnRunning(e -> setBusy(true));
+		task.setOnSucceeded(e -> {
+			setBusy(false);
+			statusLabel.setText("Saved generated " + selectedType + " code.");
+			showInfo("Save Successful", "Generated code saved successfully.");
+			refreshSubmissionTable();
+		});
+		task.setOnFailed(e -> {
+			setBusy(false);
+			showError("Save Code Failed", "Cannot save generated code.");
+		});
+
+		runTask(task, "generated-code-save-task");
+	}
+
+	@FXML
 	private void handleClearForm() {
 		clearForm();
 		submissionTable.getSelectionModel().clearSelection();
@@ -369,6 +489,7 @@ public class SubmissionController {
 		submission.setSubmissionType(submissionTypeComboBox.getValue());
 		submission.setLanguage(languageField.getText());
 		submission.setSourceCode(sourceCodeArea.getText());
+		submission.setNote(generatedExplanationArea.getText());
 		return submission;
 	}
 
@@ -381,6 +502,7 @@ public class SubmissionController {
 		submissionTypeComboBox.setValue(submission.getSubmissionType());
 		languageField.setText(submission.getLanguage() != null ? submission.getLanguage() : "C++");
 		sourceCodeArea.setText(submission.getSourceCode());
+		generatedExplanationArea.setText(nullToEmpty(submission.getNote()));
 		statusLabel.setText("Editing submission #" + submission.getId());
 	}
 
@@ -389,6 +511,7 @@ public class SubmissionController {
 		submissionTypeComboBox.setValue("AC");
 		languageField.setText("C++");
 		sourceCodeArea.clear();
+		generatedExplanationArea.clear();
 	}
 
 	private void clearResultDetails() {
@@ -423,6 +546,8 @@ public class SubmissionController {
 	private void setBusy(boolean busy) {
 		btnSave.setDisable(busy);
 		btnRun.setDisable(busy);
+		btnGenerateCode.setDisable(busy);
+		btnSaveGeneratedCode.setDisable(busy);
 		btnClear.setDisable(busy);
 		btnRefresh.setDisable(busy);
 		problemComboBox.setDisable(busy);
@@ -454,6 +579,20 @@ public class SubmissionController {
 		});
 	}
 
+	private boolean confirmReplaceGeneratedCode() {
+		Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+		alert.setTitle("Replace Generated Code");
+		alert.setHeaderText(null);
+		alert.setContentText("A generated code with this type already exists. Do you want to replace it?");
+		alert.getButtonTypes().setAll(ButtonType.YES, ButtonType.NO);
+		Optional<ButtonType> result = alert.showAndWait();
+		return result.isPresent() && result.get() == ButtonType.YES;
+	}
+
+	private boolean isValidGeneratedCode(String code) {
+		return code != null && !code.isBlank() && code.contains("main");
+	}
+
 	private String getRootMessage(Throwable throwable) {
 		if (throwable == null) {
 			return "Unknown error";
@@ -463,7 +602,7 @@ public class SubmissionController {
 			String message = current.getMessage();
 			if (message != null) {
 				if (message.contains("Cannot save execution results to database")) {
-					return "Cannot save execution results to database.";
+					return message;
 				}
 				if (message.contains("g++ compiler not found")) {
 					return "g++ compiler not found. Please install MinGW or configure PATH.";

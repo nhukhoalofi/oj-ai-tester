@@ -19,6 +19,24 @@ BEGIN
 END;
 GO
 
+IF COL_LENGTH('execution_results', 'memory_kb') IS NULL
+BEGIN
+    ALTER TABLE execution_results ADD memory_kb INT;
+END;
+GO
+
+IF COL_LENGTH('execution_results', 'actual_output') IS NULL
+BEGIN
+    ALTER TABLE execution_results ADD actual_output NVARCHAR(MAX);
+END;
+GO
+
+IF COL_LENGTH('execution_results', 'error_message') IS NULL
+BEGIN
+    ALTER TABLE execution_results ADD error_message NVARCHAR(MAX);
+END;
+GO
+
 IF COL_LENGTH('execution_results', 'created_at') IS NULL
 BEGIN
     ALTER TABLE execution_results ADD created_at DATETIME DEFAULT GETDATE();

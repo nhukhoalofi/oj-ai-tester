@@ -24,6 +24,7 @@ public class SubmissionRepositoryImpl implements SubmissionRepository {
         submission.setSubmissionType(rs.getString("submission_type"));
         submission.setLanguage(rs.getString("language"));
         submission.setSourceCode(rs.getString("source_code"));
+        submission.setNote(rs.getString("note"));
 
         Timestamp createdAt = rs.getTimestamp("created_at");
         if (createdAt != null) {
@@ -37,8 +38,8 @@ public class SubmissionRepositoryImpl implements SubmissionRepository {
     public Submission save(Submission submission) {
         boolean isInsert = submission.getId() == null;
         String sql = isInsert
-                ? "INSERT INTO submissions (problem_id, name, submission_type, language, source_code) VALUES (?, ?, ?, ?, ?)"
-                : "UPDATE submissions SET problem_id = ?, name = ?, submission_type = ?, language = ?, source_code = ? WHERE submission_id = ?";
+                ? "INSERT INTO submissions (problem_id, name, submission_type, language, source_code, note) VALUES (?, ?, ?, ?, ?, ?)"
+                : "UPDATE submissions SET problem_id = ?, name = ?, submission_type = ?, language = ?, source_code = ?, note = ?, updated_at = GETDATE() WHERE submission_id = ?";
 
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
@@ -48,8 +49,9 @@ public class SubmissionRepositoryImpl implements SubmissionRepository {
             ps.setString(3, submission.getSubmissionType());
             ps.setString(4, submission.getLanguage());
             ps.setString(5, submission.getSourceCode());
+            ps.setString(6, submission.getNote());
             if (!isInsert) {
-                ps.setLong(6, submission.getId());
+                ps.setLong(7, submission.getId());
             }
 
             ps.executeUpdate();
@@ -87,6 +89,66 @@ public class SubmissionRepositoryImpl implements SubmissionRepository {
             return list;
         } catch (Exception e) {
             throw new RuntimeException("Error loading submissions by problem id", e);
+        }
+    }
+
+    @Override
+    public List<Submission> findByProblemIdAndType(Long problemId, String submissionType) {
+        String sql = """
+                SELECT * FROM submissions
+                WHERE problem_id = ? AND UPPER(submission_type) = UPPER(?)
+                ORDER BY created_at DESC, submission_id DESC
+                """;
+        List<Submission> list = new ArrayList<>();
+
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setLong(1, problemId);
+            ps.setString(2, submissionType);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapSubmission(rs));
+                }
+            }
+
+            return list;
+        } catch (Exception e) {
+            throw new RuntimeException("Error loading submissions by problem id and type", e);
+        }
+    }
+
+    @Override
+    public void deleteByProblemIdAndType(Long problemId, String submissionType) {
+        String deleteExecutionResults = """
+                DELETE FROM execution_results
+                WHERE submission_id IN (
+                    SELECT submission_id FROM submissions
+                    WHERE problem_id = ? AND UPPER(submission_type) = UPPER(?)
+                )
+                """;
+        String deleteSubmissions = "DELETE FROM submissions WHERE problem_id = ? AND UPPER(submission_type) = UPPER(?)";
+
+        try (Connection conn = DatabaseConfig.getConnection()) {
+            conn.setAutoCommit(false);
+            try (PreparedStatement ps1 = conn.prepareStatement(deleteExecutionResults);
+                 PreparedStatement ps2 = conn.prepareStatement(deleteSubmissions)) {
+                ps1.setLong(1, problemId);
+                ps1.setString(2, submissionType);
+                ps1.executeUpdate();
+
+                ps2.setLong(1, problemId);
+                ps2.setString(2, submissionType);
+                ps2.executeUpdate();
+
+                conn.commit();
+            } catch (Exception ex) {
+                conn.rollback();
+                throw ex;
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Error deleting submissions by problem id and type", e);
         }
     }
 

@@ -7,6 +7,12 @@ BEGIN
 END;
 GO
 
+IF COL_LENGTH('submissions', 'note') IS NULL
+BEGIN
+    ALTER TABLE submissions ADD note NVARCHAR(MAX);
+END;
+GO
+
 IF NOT EXISTS (
     SELECT 1
     FROM sys.check_constraints

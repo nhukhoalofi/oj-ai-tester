@@ -52,6 +52,7 @@ CREATE TABLE submissions (
     submission_type NVARCHAR(50),
     language NVARCHAR(50),
     source_code NVARCHAR(MAX),
+    note NVARCHAR(MAX),
     created_at DATETIME DEFAULT GETDATE(),
     updated_at DATETIME DEFAULT GETDATE(),
     FOREIGN KEY (problem_id) REFERENCES problems(problem_id)

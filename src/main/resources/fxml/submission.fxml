@@ -86,6 +86,12 @@
 						<Button fx:id="btnRun"
 								text="Run All Testcases"
 								onAction="#handleRunSubmission" />
+						<Button fx:id="btnGenerateCode"
+								text="Generate Code by AI"
+								onAction="#handleGenerateCodeByAI" />
+						<Button fx:id="btnSaveGeneratedCode"
+								text="Save Code"
+								onAction="#handleSaveGeneratedCode" />
 						<Button fx:id="btnClear"
 								text="Clear"
 								onAction="#handleClearForm" />
@@ -101,6 +107,12 @@
 										  wrapText="false"
 										  prefRowCount="28"
 										  promptText="#include &lt;iostream&gt; ..." />
+								<Label text="AI Explanation" style="-fx-font-weight: bold;" />
+								<TextArea fx:id="generatedExplanationArea"
+										  editable="false"
+										  wrapText="true"
+										  prefRowCount="4"
+										  promptText="AI explanation will appear here." />
 							</children>
 						</VBox>
 
