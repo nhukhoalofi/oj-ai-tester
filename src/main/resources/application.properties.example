@@ -1,0 +1,31 @@
+# ============================================
+# OJ AI Tester - Configuration Template
+# ============================================
+# Copy this file to application.properties and fill in your values
+
+# ---- Application Settings ----
+app.name=OJ AI Tester
+app.tempDir=temp
+
+# ---- Database Configuration ----
+# For SQL Server
+db.url=jdbc:sqlserver://localhost:1433;databaseName=OJ_AI_TESTER;encrypt=true;trustServerCertificate=true;integratedSecurity=true
+
+# ---- AI Provider Configuration ----
+# Supported providers: gemini, openai, claude
+ai.provider=gemini
+ai.apiKey=YOUR_API_KEY_HERE
+ai.model=gemini-2.5-flash
+
+# Alternative: if using OpenAI
+# ai.provider=openai
+# ai.apiKey=sk-...
+# ai.model=gpt-4
+
+# ---- Code Execution Settings ----
+execution.timeLimitMs=2000
+execution.memoryLimitMb=256
+
+# ---- OCR Configuration ----
+ocr.tesseractPath=C:/Program Files/Tesseract-OCR/tesseract.exe
+ocr.language=eng

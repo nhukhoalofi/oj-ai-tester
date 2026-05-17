@@ -17,10 +17,14 @@ Thumbs.db
 
 # Runtime / temp
 temp/
-native/
 
 # Environment / secrets
 .env
+application.properties
+
+# Generated data
+submissions/
+uploads/
 
 # VS Code
 .vscode/
